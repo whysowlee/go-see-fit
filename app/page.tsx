@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useApp } from "@/lib/store";
 import type { Sex } from "@/lib/config";
 
@@ -16,10 +17,15 @@ export default function HomePage() {
     <div className="flex flex-1 items-center justify-center px-4">
       <div className="w-full max-w-md space-y-10 text-center">
         <div>
-          <h1 style={{ fontFamily: "var(--font-serif)", fontSize: 42, fontWeight: 700, letterSpacing: "-0.02em", color: "#000" }}>
-            2000 Go See Fit
-          </h1>
-          <p className="mt-3 text-base text-zinc-600">
+          <Image
+            src="/logo.png"
+            alt="2000 Go-See-Fit"
+            width={1180}
+            height={214}
+            priority
+            className="mx-auto w-full max-w-[280px] h-auto"
+          />
+          <p className="mt-4 text-base text-zinc-600">
             AI 얼굴형·체형 분석
           </p>
           <p className="mt-1 text-xs text-zinc-400">
