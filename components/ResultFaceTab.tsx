@@ -54,7 +54,7 @@ function FacePanel({ data }: { data: FaceResultData }) {
   );
   return (
     <div style={{ flex: "0 0 178px", width: 178, display: "flex", flexDirection: "column", gap: 8, alignSelf: "flex-start" }}>
-      <div style={{ display: "flex", border: `0.5px solid ${C.line05}`, borderRadius: 999, overflow: "hidden" }}><Seg id="original" label="원본" /><Seg id="fitting" label="가상 피팅" /></div>
+      <div className="no-print" style={{ display: "flex", border: `0.5px solid ${C.line05}`, borderRadius: 999, overflow: "hidden" }}><Seg id="original" label="원본" /><Seg id="fitting" label="가상 피팅" /></div>
       <div style={{ position: "relative", border: `0.5px solid ${C.line05}`, borderRadius: 8, padding: 8 }}>
         {mode === "fitting" && <div style={{ position: "absolute", top: 10, left: 10, zIndex: 2 }}><Badge tone="accent">가상 피팅 beta</Badge></div>}
         <div style={{ position: "relative", width: "100%" }}>
@@ -176,7 +176,7 @@ function VFControl({ status, sessionRemaining, hasSelection, errorMessage, onGen
   else if (isGenerated) hint = "현재 선택으로 생성된 결과입니다";
   else if (status === "error") hint = errorMessage ?? "생성에 실패했어요. 잠시 후 다시 시도해주세요";
 
-  return (<div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", border: `0.5px solid ${C.line05}`, background: C.tint, borderRadius: 8 }}>
+  return (<div className="no-print" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", border: `0.5px solid ${C.line05}`, background: C.tint, borderRadius: 8 }}>
     <button onClick={onGenerate} disabled={disabled} style={{
       padding: "8px 14px", borderRadius: 8, border: "none", cursor: disabled ? "not-allowed" : "pointer",
       background: disabled ? C.track : C.indigo, color: disabled ? C.gray : C.white,
@@ -194,7 +194,7 @@ function PosingTip({ tip, onRefresh }: { tip: string; onRefresh?: () => void }) 
       <span style={{ fontSize: 13, fontWeight: 700, color: C.indigo }}>포징 팁</span>
       <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
         {onRefresh && !loading && (
-          <button onClick={onRefresh} style={{ background: "none", border: `1px solid ${C.ash}`, borderRadius: 6, padding: "3px 8px", fontSize: 11, color: C.ash, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+          <button onClick={onRefresh} className="no-print" style={{ background: "none", border: `1px solid ${C.ash}`, borderRadius: 6, padding: "3px 8px", fontSize: 11, color: C.ash, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0 1 10.3-4.2M14 8a6 6 0 0 1-10.3 4.2" stroke={C.ash} strokeWidth="1.4" strokeLinecap="round" /><path d="M12 1v3.5h-3.5M4 15v-3.5h3.5" stroke={C.ash} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
             다시 생성
           </button>
@@ -231,7 +231,7 @@ export function FaceShapeTab({
       </div>
     </div>
     <PosingTip tip={data.posingTip} onRefresh={onRefreshTip} />
-    <div style={{ borderTop: `0.5px solid ${C.line05}`, paddingTop: 14, display: "flex", justifyContent: "flex-end", gap: 8 }}>
+    <div className="no-print" style={{ borderTop: `0.5px solid ${C.line05}`, paddingTop: 14, display: "flex", justifyContent: "flex-end", gap: 8 }}>
       <button onClick={onProductLink} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 8, border: `1px solid ${C.ash}`, background: C.white, color: C.ash, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>상품 연결 <Badge>beta</Badge></button>
       <button onClick={onSave} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 8, border: `2px solid ${C.black}`, background: C.white, color: C.black, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
         <IconBookmark /> {isLoggedIn ? "저장" : "저장 (로그인)"} <Badge>DB 미구현·beta</Badge>

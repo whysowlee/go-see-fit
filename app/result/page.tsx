@@ -466,35 +466,46 @@ export default function ResultPage() {
   return (
     <div style={{ minHeight: "100vh", background: C.white, color: C.black }}>
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <div className="no-print" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <button onClick={() => router.push("/landmarks")} style={{ color: C.ash, fontSize: 14, background: "none", border: "none", cursor: "pointer" }}>
             &larr; 랜드마크 보정
           </button>
-          <button onClick={() => router.push("/")} style={{ color: C.ash, fontSize: 13, background: "none", border: "none", cursor: "pointer" }}>
-            처음부터
-          </button>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <button onClick={() => window.print()} style={{ color: C.black, fontSize: 13, background: C.white, border: `1px solid ${C.ash}`, borderRadius: 6, padding: "5px 10px", cursor: "pointer" }}>
+              PDF 저장
+            </button>
+            <button onClick={() => router.push("/")} style={{ color: C.ash, fontSize: 13, background: "none", border: "none", cursor: "pointer" }}>
+              처음부터
+            </button>
+          </div>
         </div>
 
-        <ResultTabBar active={tab} onChange={setTab} />
+        <div className="no-print"><ResultTabBar active={tab} onChange={setTab} /></div>
 
-        {tab === "face" && faceData && (
-          <FaceShapeTab
-            data={faceData}
-            onRefreshTip={() => { setFaceTip("포징 팁 생성 중…"); doFetchFaceTip(); }}
-            selected={vf.face.selectedLabels}
-            onSelectChange={(labels) => handleSelectChange("face", labels)}
-            vf={buildVFControl("face")}
-          />
-        )}
-        {tab === "body" && bodyData && (
-          <BodyTypeTab
-            data={bodyData}
-            onRefreshTip={() => { setBodyTip("포징 팁 생성 중…"); doFetchBodyTip(); }}
-            selected={vf.body.selectedLabels}
-            onSelectChange={(labels) => handleSelectChange("body", labels)}
-            vf={buildVFControl("body")}
-          />
-        )}
+        <div className="print-show-both">
+          <div style={{ display: tab === "face" ? "block" : "none" }}>
+            {faceData && (
+              <FaceShapeTab
+                data={faceData}
+                onRefreshTip={() => { setFaceTip("포징 팁 생성 중…"); doFetchFaceTip(); }}
+                selected={vf.face.selectedLabels}
+                onSelectChange={(labels) => handleSelectChange("face", labels)}
+                vf={buildVFControl("face")}
+              />
+            )}
+          </div>
+          <div className="print-page-break" style={{ display: tab === "body" ? "block" : "none" }}>
+            {bodyData && (
+              <BodyTypeTab
+                data={bodyData}
+                onRefreshTip={() => { setBodyTip("포징 팁 생성 중…"); doFetchBodyTip(); }}
+                selected={vf.body.selectedLabels}
+                onSelectChange={(labels) => handleSelectChange("body", labels)}
+                vf={buildVFControl("body")}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
