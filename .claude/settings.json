@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(source /Users/leejihyeon/go-see-fit/.env.local && curl * generativelanguage.googleapis.com *)"
+    ]
+  }
+}

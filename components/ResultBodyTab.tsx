@@ -126,6 +126,23 @@ function PosingTip({ tip, onRefresh }: { tip: string; onRefresh?: () => void }) 
   </div>);
 }
 
+const GROUP_LABEL: Record<string, string> = {
+  "body-top": "상의",
+  "body-bottom": "하의",
+  "material": "소재",
+};
+
+function groupChips(chips: Chip[]): { group: string; label: string; chips: Chip[] }[] {
+  const order: string[] = [];
+  const map = new Map<string, Chip[]>();
+  for (const c of chips) {
+    const g = c.group ?? "기타";
+    if (!map.has(g)) { map.set(g, []); order.push(g); }
+    map.get(g)!.push(c);
+  }
+  return order.map((g) => ({ group: g, label: GROUP_LABEL[g] ?? g, chips: map.get(g)! }));
+}
+
 function StyleChips({ data, selected, onChange }: {
   data: BodyResultData; selected: string[]; onChange: (labels: string[]) => void;
 }) {
@@ -165,11 +182,23 @@ function StyleChips({ data, selected, onChange }: {
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
       <div style={{ border: `0.5px solid ${C.recBorder}`, background: C.recBg, borderRadius: 8, padding: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8, fontSize: 12, fontWeight: 600, color: C.recInk }}><IconCheck /> 추천</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{data.recommend.map((c) => <ChipBtn key={c.label} c={c} kind="rec" />)}</div>
+        {groupChips(data.recommend).map(({ group, label, chips }, i) => (
+          <div key={group} style={{ marginTop: i === 0 ? 0 : 10 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: C.ash, marginBottom: 5, letterSpacing: "0.02em" }}>{label}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{chips.map((c) => <ChipBtn key={c.label} c={c} kind="rec" />)}</div>
+          </div>
+        ))}
       </div>
       <div style={{ border: `0.5px solid ${C.avoidBorder}`, background: C.avoidBg, borderRadius: 8, padding: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8, fontSize: 12, fontWeight: 600, color: C.avoidInk }}><IconX /> 비추천</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{data.avoid.map((c) => <ChipBtn key={c.label} c={c} kind="avoid" />)}</div>
+        {data.avoid.length > 0
+          ? groupChips(data.avoid).map(({ group, label, chips }, i) => (
+              <div key={group} style={{ marginTop: i === 0 ? 0 : 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: C.ash, marginBottom: 5, letterSpacing: "0.02em" }}>{label}</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{chips.map((c) => <ChipBtn key={c.label} c={c} kind="avoid" />)}</div>
+              </div>
+            ))
+          : <span style={{ fontSize: 12, color: C.gray }}>특별히 회피할 항목이 없습니다</span>}
       </div>
     </div>
     {note && <p style={{ margin: "8px 0 0", fontSize: 11, color: C.ash }}>{note}</p>}
