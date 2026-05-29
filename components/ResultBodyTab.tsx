@@ -126,21 +126,21 @@ function PosingTip({ tip, onRefresh }: { tip: string; onRefresh?: () => void }) 
   </div>);
 }
 
-const GROUP_LABEL: Record<string, string> = {
-  "body-top": "상의",
-  "body-bottom": "하의",
-  "material": "소재",
-};
+// 서브헤더 단위로 칩을 묶음. 같은 서브헤더 아래 여러 group이 있으면
+// (예: 상의 = "body-top" + "material-top") 한 섹션에 함께 표시되지만
+// 칩 클릭 시 single-select는 group 단위로만 적용 → 핏 1개 + 소재 1개 독립 선택 가능
+const SUBHEADER_DEF: { label: string; groups: string[] }[] = [
+  { label: "상의", groups: ["body-top", "material-top"] },
+  { label: "하의", groups: ["body-bottom", "material-bottom"] },
+];
 
-function groupChips(chips: Chip[]): { group: string; label: string; chips: Chip[] }[] {
-  const order: string[] = [];
-  const map = new Map<string, Chip[]>();
-  for (const c of chips) {
-    const g = c.group ?? "기타";
-    if (!map.has(g)) { map.set(g, []); order.push(g); }
-    map.get(g)!.push(c);
-  }
-  return order.map((g) => ({ group: g, label: GROUP_LABEL[g] ?? g, chips: map.get(g)! }));
+function groupChips(chips: Chip[]): { label: string; chips: Chip[] }[] {
+  return SUBHEADER_DEF
+    .map(({ label, groups }) => ({
+      label,
+      chips: chips.filter((c) => c.group !== undefined && groups.includes(c.group)),
+    }))
+    .filter(({ chips }) => chips.length > 0);
 }
 
 function StyleChips({ data, selected, onChange }: {
@@ -182,8 +182,8 @@ function StyleChips({ data, selected, onChange }: {
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
       <div style={{ border: `0.5px solid ${C.recBorder}`, background: C.recBg, borderRadius: 8, padding: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8, fontSize: 12, fontWeight: 600, color: C.recInk }}><IconCheck /> 추천</div>
-        {groupChips(data.recommend).map(({ group, label, chips }, i) => (
-          <div key={group} style={{ marginTop: i === 0 ? 0 : 10 }}>
+        {groupChips(data.recommend).map(({ label, chips }, i) => (
+          <div key={label} style={{ marginTop: i === 0 ? 0 : 10 }}>
             <div style={{ fontSize: 10, fontWeight: 600, color: C.ash, marginBottom: 5, letterSpacing: "0.02em" }}>{label}</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{chips.map((c) => <ChipBtn key={c.label} c={c} kind="rec" />)}</div>
           </div>
@@ -192,8 +192,8 @@ function StyleChips({ data, selected, onChange }: {
       <div style={{ border: `0.5px solid ${C.avoidBorder}`, background: C.avoidBg, borderRadius: 8, padding: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8, fontSize: 12, fontWeight: 600, color: C.avoidInk }}><IconX /> 비추천</div>
         {data.avoid.length > 0
-          ? groupChips(data.avoid).map(({ group, label, chips }, i) => (
-              <div key={group} style={{ marginTop: i === 0 ? 0 : 10 }}>
+          ? groupChips(data.avoid).map(({ label, chips }, i) => (
+              <div key={label} style={{ marginTop: i === 0 ? 0 : 10 }}>
                 <div style={{ fontSize: 10, fontWeight: 600, color: C.ash, marginBottom: 5, letterSpacing: "0.02em" }}>{label}</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{chips.map((c) => <ChipBtn key={c.label} c={c} kind="avoid" />)}</div>
               </div>

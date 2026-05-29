@@ -156,34 +156,28 @@ function pickTopN(items: ScoredItem[], n: number, direction: "rec" | "avoid", gr
   return out;
 }
 
-// 1층 골격 → 소재 (근사값, basis.txt §1-4)
-const MATERIAL_REC: Record<Skeleton, StyleChip[]> = {
-  "스트레이트": [
-    { label: "구조적 셰이프드 핏", group: "material", category: "garment", prompt: "구조감 있는 셰이프드 핏 의상" },
-    { label: "중두께 면", group: "material", category: "garment", prompt: "중두께 면 소재 의상" },
-  ],
-  "웨이브": [
-    { label: "부드러운 슬림~세미핏", group: "material", category: "garment", prompt: "부드럽게 떨어지는 슬림~세미핏 의상" },
-    { label: "시폰·드레이프", group: "material", category: "garment", prompt: "시폰 또는 드레이프성 좋은 얇은 소재 의상" },
-  ],
-  "내추럴": [
-    { label: "릴랙스드·자연 낙하감", group: "material", category: "garment", prompt: "릴랙스드한 자연 낙하감의 의상" },
-    { label: "린넨·워싱 데님", group: "material", category: "garment", prompt: "린넨 또는 워싱 데님 의상" },
-  ],
+// 1층 골격 → 상의 소재 (basis §1-4)
+const TOP_MATERIAL_REC: Record<Skeleton, StyleChip> = {
+  "스트레이트": { label: "구조적 셰이프드 핏", group: "material-top", category: "garment", prompt: "구조감 있는 셰이프드 핏 상의" },
+  "웨이브":    { label: "부드러운 슬림~세미핏", group: "material-top", category: "garment", prompt: "부드럽게 떨어지는 슬림~세미핏 상의" },
+  "내추럴":    { label: "릴랙스드·자연 낙하", group: "material-top", category: "garment", prompt: "릴랙스드한 자연 낙하감의 상의" },
 };
-const MATERIAL_AVOID: Record<Skeleton, StyleChip[]> = {
-  "스트레이트": [
-    { label: "흐물거리는 드레이프", group: "material" },
-    { label: "얇은 쉬폰", group: "material" },
-  ],
-  "웨이브": [
-    { label: "두꺼운 트위드", group: "material" },
-    { label: "딱딱한 구조·과한 볼륨", group: "material" },
-  ],
-  "내추럴": [
-    { label: "타이트 셋인·빡빡한 핏", group: "material" },
-    { label: "광택 새틴", group: "material" },
-  ],
+const TOP_MATERIAL_AVOID: Record<Skeleton, StyleChip> = {
+  "스트레이트": { label: "흐물거리는 드레이프", group: "material-top" },
+  "웨이브":    { label: "딱딱한 구조·과한 볼륨", group: "material-top" },
+  "내추럴":    { label: "타이트 셋인·빡빡한 핏", group: "material-top" },
+};
+
+// 1층 골격 → 하의 소재 (basis §2-4)
+const BOTTOM_MATERIAL_REC: Record<Skeleton, StyleChip> = {
+  "스트레이트": { label: "구조적 직물", group: "material-bottom", category: "garment", prompt: "구조적 직물 소재의 하의" },
+  "웨이브":    { label: "부드러운 드레이프", group: "material-bottom", category: "garment", prompt: "부드러운 드레이프성 소재의 하의" },
+  "내추럴":    { label: "워싱 데님·자연소재", group: "material-bottom", category: "garment", prompt: "워싱 데님 또는 자연소재의 하의" },
+};
+const BOTTOM_MATERIAL_AVOID: Record<Skeleton, StyleChip> = {
+  "스트레이트": { label: "머메이드·흐물 드레이프", group: "material-bottom" },
+  "웨이브":    { label: "빳빳한 와이드", group: "material-bottom" },
+  "내추럴":    { label: "광택 새틴", group: "material-bottom" },
 };
 
 // 남성 V형/직선형 → 매트릭스(여성 기준) 매핑
@@ -219,10 +213,14 @@ export function getStyleRecommendation(input: BodyStyleInput): BodyStyleResult {
   const sil = mapSilhouette(input.silhouette);
   const entry = lookupMatrix(input.skeleton, sil, input.proportion as MProportion, input.frame as MFrame);
   if (!entry) {
-    // 매트릭스에 없으면 소재만이라도 반환
+    // 매트릭스에 없으면 소재만이라도 반환 (상의 소재 + 하의 소재)
+    const topMatRec = TOP_MATERIAL_REC[input.skeleton];
+    const botMatRec = BOTTOM_MATERIAL_REC[input.skeleton];
+    const topMatAv = TOP_MATERIAL_AVOID[input.skeleton];
+    const botMatAv = BOTTOM_MATERIAL_AVOID[input.skeleton];
     return {
-      recommend: MATERIAL_REC[input.skeleton] ?? [],
-      avoid: MATERIAL_AVOID[input.skeleton] ?? [],
+      recommend: [topMatRec, botMatRec].filter(Boolean),
+      avoid: [topMatAv, botMatAv].filter(Boolean),
       selectedDefault: [],
     };
   }
@@ -255,12 +253,15 @@ export function getStyleRecommendation(input: BodyStyleInput): BodyStyleResult {
   const botsRec = pickTopN(botItems, 2, "rec", "body-bottom", "garment");
   const botsAvoid = pickTopN(botItems, 2, "avoid", "body-bottom", "garment");
 
-  const matRec = MATERIAL_REC[input.skeleton] ?? [];
-  const matAvoid = MATERIAL_AVOID[input.skeleton] ?? [];
+  // 상의 묶음(피트·기장 + 상의 소재) → 하의 묶음(라이즈·기장·실루엣 + 하의 소재) 순서로
+  const topMatRec = TOP_MATERIAL_REC[input.skeleton];
+  const botMatRec = BOTTOM_MATERIAL_REC[input.skeleton];
+  const topMatAv = TOP_MATERIAL_AVOID[input.skeleton];
+  const botMatAv = BOTTOM_MATERIAL_AVOID[input.skeleton];
 
   return {
-    recommend: [...topsRec, ...botsRec, ...matRec],
-    avoid: [...topsAvoid, ...botsAvoid, ...matAvoid],
+    recommend: [...topsRec, ...(topMatRec ? [topMatRec] : []), ...botsRec, ...(botMatRec ? [botMatRec] : [])],
+    avoid: [...topsAvoid, ...(topMatAv ? [topMatAv] : []), ...botsAvoid, ...(botMatAv ? [botMatAv] : [])],
     selectedDefault: [],
   };
 }
