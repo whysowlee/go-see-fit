@@ -27,9 +27,42 @@ export function slopeAngleDeg(a: Point, b: Point): number {
   return (Math.atan2(Math.abs(b.y - a.y), Math.abs(b.x - a.x)) * 180) / Math.PI;
 }
 
-/** 안쪽 눈썹 각도: 안쪽 끝점→중간점 선이 수평과 이루는 각. 이미지 좌표는 y가 아래로 +라 부호 보정. */
+/** 안쪽 눈썹 각도: 안쪽 끝점→중간점 선이 수평과 이루는 각. 이미지 좌표는 y가 아래로 +라 부호 보정.
+ *  ⚠ 결과 범위 [-180, +180]. 좌측 눈썹은 mid.x < inner.x 라 결과가 ±180° 경계에 모여 wrap이 발생함 → 평균/SD 부적합.
+ *  새 코드에서는 signedSlopeAngleDeg 사용 권장 (호환성 위해 함수 자체는 보존). */
 export function browAngleDeg(inner: Point, mid: Point): number {
   return (Math.atan2(-(mid.y - inner.y), mid.x - inner.x) * 180) / Math.PI;
+}
+
+/** 두 점을 잇는 선이 수평선과 이루는 부호 있는 각도 (도, [-90, +90]).
+ *  양수 = to 가 from 보다 화면상 위, 음수 = 아래. 수평 성분은 abs() 처리해서 좌·우 무관하게 동일 동작.
+ *  ⚠ 머리가 기울어진 사진에서는 그만큼 같이 기울어진 값으로 측정됨 → 얼굴 자체 기준이 필요하면 tiltFromAxis 사용. */
+export function signedSlopeAngleDeg(from: Point, to: Point): number {
+  const dx = Math.abs(to.x - from.x);
+  const dy = -(to.y - from.y);  // 화면 y는 아래로 + → 부호 보정해서 위가 +
+  return (Math.atan2(dy, dx) * 180) / Math.PI;
+}
+
+/** vStart→vEnd 벡터가 ref 축 (refStart→refEnd) 으로부터 이루는 부호 있는 각도 [-90, +90].
+ *  양수 = v 가 ref 축에서 "위쪽" (이미지에서 픽셀 y 감소 방향) 으로 기울음.
+ *  refStart/End 를 얼굴 자체의 수평 (예: 광대 양쪽) 으로 주면 머리 자세 기울기에 robust 한 측정.
+ *  사용 예: brow tilt = tiltFromAxis(browInnerL, browMidL, zygomaticL, zygomaticR). */
+export function tiltFromAxis(
+  vStart: Point, vEnd: Point,
+  refStart: Point, refEnd: Point,
+): number {
+  const rx = refEnd.x - refStart.x;
+  const ry = refEnd.y - refStart.y;
+  const rn = Math.hypot(rx, ry);
+  if (rn === 0) return 0;
+  const ux = rx / rn, uy = ry / rn;
+  // 이미지 좌표 (y 아래로 +) 에서 ref 축에 수직이면서 "위쪽" 방향: (uy, -ux)
+  const vx = uy, vy = -ux;
+  const bx = vEnd.x - vStart.x;
+  const by = vEnd.y - vStart.y;
+  const parallel = bx * ux + by * uy;
+  const perp = bx * vx + by * vy;
+  return (Math.atan2(perp, Math.abs(parallel)) * 180) / Math.PI;
 }
 
 export const zscore = (value: number, m: number, s: number): number => (value - m) / (s || 1e-9);

@@ -58,11 +58,20 @@ export const TRUST = {
     "Todorov·Baron·Oosterhof(2008) Table 1. 단 원계수는 FaceGen morph 단위 기준 -> 기하 z-score 적용은 근사."
   ),
   commercialCutZ: T(0, "UNDETERMINED", "가중합 임계. 라벨(커머셜/비커머셜) 데이터로 보정"),
-  // z-score용 norm (지표별 평균/표준편차) — 표본으로 채울 것
+  // z-score용 norm (지표별 평균/표준편차)
+  // ⚠ INTERIM n=1: 일반인 평균(m)은 AI Hub 샘플 1명(S001 정면·중립·표준조명·무액세서리)에서 산출.
+  // SD는 모델 표본 67명에서 임시 차용 (inter-person scale 추정용; 일반인 SD 도착 즉시 교체).
+  // (AI Hub 샘플엔 S001~S006이 있었지만 실은 1명이 액세서리만 바꿔서 찍은 것 → 실제 인구 n=1)
+  // gsf-calibration/general_pop_images/ 에 일반인 사진 추가 → bash update.sh → 자동 재계산.
   norm: T(
-    { browAngle: { m: 0, s: 1 }, cheekProjection: { m: 0, s: 1 }, jawWidth: { m: 0, s: 1 }, sellionDepth: { m: 0, s: 1 } },
-    "UNDETERMINED",
-    "데모용 항등 norm. 파일럿 표본의 지표별 평균/SD로 교체"
+    {
+      browAngle: { m: 4.0709, s: 4.1132 },
+      cheekProjection: { m: 0.8395, s: 0.0491 },
+      jawWidth: { m: 0.7889, s: 0.0217 },
+      sellionDepth: { m: 0.2831, s: 0.0252 },
+    },
+    "PROVISIONAL",
+    "INTERIM n=1 일반인 mean (S001) + 모델 표본 SD 임시 차용. 일반인 표본 확장 즉시 교체. gsf-calibration/general_pop_scores.csv"
   ),
 };
 

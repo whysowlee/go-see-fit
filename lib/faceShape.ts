@@ -5,7 +5,7 @@
  * 입력은 "의미 있는 이름이 붙은 좌표"(이미 MediaPipe 468점에서 매핑된 상태).
  * MediaPipe → 이 좌표 매핑은 별도 모듈(lib/mediapipe/faceMap.ts)에서 처리. (gap)
  */
-import { Point, dist, angleDeg, browAngleDeg, zscore, normalizeScores } from "./geometry";
+import { Point, dist, angleDeg, tiltFromAxis, zscore, normalizeScores } from "./geometry";
 import { FACE, TRUST } from "./config";
 
 export type FaceShape = "둥근형" | "사각형" | "장방형" | "계란형" | "역삼각형" | "마름모형";
@@ -140,7 +140,7 @@ export function computeTrust(lm: FaceLandmarks, m?: FaceMetrics): TrustResult {
   const fm = m ?? computeFaceMetrics(lm);
   // 4지표 원시값 (모두 무차원/각도; 얼굴 크기 무관)
   const raw = {
-    browAngle: browAngleDeg(lm.browInnerL, lm.browMidL), // ① 클수록 신뢰↑
+    browAngle: tiltFromAxis(lm.browInnerL, lm.browMidL, lm.zygomaticL, lm.zygomaticR), // ① 클수록 신뢰↑ (얼굴 광대축 기준, 머리 자세 무관)
     cheekProjection: fm.Wc / fm.L, // ② 광대너비/얼굴길이
     jawWidth: fm.Wj / fm.Wc, // ③ 하악각거리/광대거리 (넓을수록 신뢰↑)
     sellionDepth: dist(lm.noseSellion, lm.noseTip) / fm.L, // ④ 깊을수록 신뢰↓
