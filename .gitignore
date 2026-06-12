@@ -33,13 +33,6 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
-# stale chat attachments — 실제 사용 파일은 components/ 와 app/api/ 에 있음
-/ImageCropper.tsx
-/LandmarkEditor.tsx
-/ResultBodyTab.tsx
-/ResultFaceTab.tsx
-/route.ts
-
 # vercel
 .vercel
 
