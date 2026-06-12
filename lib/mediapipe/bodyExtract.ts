@@ -299,6 +299,8 @@ export function extractBodyMeasurements(
     hipIn?: number;
     frontOverrides?: Record<number, LandmarkPoint>;
     neckBasePx?: { left: { x: number; y: number }; right: { x: number; y: number } };
+    /** 사용자가 보정한 "양쪽 목 옆선" (편집 그룹 #5). neckIndexLow 계산에 사용. */
+    neckPx?: { left: { x: number; y: number }; right: { x: number; y: number } };
   },
 ): BodyExtractResult {
   const approx: string[] = [];
@@ -364,10 +366,16 @@ export function extractBodyMeasurements(
   const jointWidthIndex = (shBody_n + hipBody_n) * 13;
   approx.push("jointWidthIndex: 어깨+골반 비례 프록시");
 
-  const earDist = Math.abs(earL.x - earR.x);
-  const neckThin = earDist / shoulderW_raw < 0.55;
+  // 목 폭: 사용자가 보정한 neckL/neckR (편집 그룹 #5 "목에서 가장 굵은 부분") 우선.
+  // 없으면 귀 간격 프록시로 폴백 (정확도 ↓ — 머리 크기에 좌우됨).
+  const neckWidth = options.neckPx
+    ? Math.abs(options.neckPx.right.x - options.neckPx.left.x)
+    : Math.abs(earL.x - earR.x);
+  // 컷 0.40 = 목 옆선 폭 / 어깨 너비. (귀 간격 기준 0.55 → 목 폭은 더 좁으니 임계도 더 작아야)
+  // 임시값. SizeKorea 목둘레지수 분포로 보정 예정.
+  const neckThin = neckWidth / shoulderW_raw < 0.40;
   const neckIndexLow = neckThin && shoulderSlopeDeg <= 16;
-  approx.push("neckIndexLow: 귀 간격/어깨 프록시");
+  approx.push(options.neckPx ? "neckIndexLow: 보정된 목 옆선 폭/어깨" : "neckIndexLow: 귀 간격/어깨 프록시 (폴백)");
 
   // ── 정면 체표면 너비 (키 대비 무차원) ──
   const chestFW_n = shBody_n * CORRECTIONS.chestVsShoulder;

@@ -224,14 +224,21 @@ export default function ResultPage() {
   // ── body data ──
   const bodyCalc = useMemo(() => {
     if (!lm || !photos || !state.sex) return null;
+    const fW = photos.bodyFront.croppedWidth || photos.bodyFront.width;
+    const fH = photos.bodyFront.croppedHeight || photos.bodyFront.height;
+    const fOv = lm.frontOverrides;
+    // 사용자 보정한 목 옆선 (#5 그룹, pose idx 7·8). 없으면 MediaPipe 기본 픽셀 좌표.
+    const neckLpx = fOv[7] ?? { x: lm.frontPose[7].x * fW, y: lm.frontPose[7].y * fH };
+    const neckRpx = fOv[8] ?? { x: lm.frontPose[8].x * fW, y: lm.frontPose[8].y * fH };
     const extract = extractBodyMeasurements(lm.frontPose, {
-      frontDims: { width: photos.bodyFront.croppedWidth || photos.bodyFront.width, height: photos.bodyFront.croppedHeight || photos.bodyFront.height },
+      frontDims: { width: fW, height: fH },
       sideDepths: lm.sideDepths,
       heightCm: bi.heightCm ?? undefined,
       bustIn: bi.bustIn ?? undefined,
       waistIn: bi.waistIn ?? undefined,
       hipIn: bi.hipIn ?? undefined,
       frontOverrides: lm.frontOverrides,
+      neckPx: { left: neckLpx, right: neckRpx },
     });
     const skel = classifySkeleton(extract.measurements, state.sex, extract.sideAvailable);
     const axes = classifyAxes(extract.measurements, state.sex);
