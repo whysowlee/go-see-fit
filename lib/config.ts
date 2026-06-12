@@ -27,18 +27,16 @@ const T = <T,>(value: T, status: CalStatus, source: string): Threshold<T> => ({ 
  * 1. 얼굴형 — 형태 계측 컷
  * ────────────────────────────────────────────────────────── */
 export const FACE = {
-  AR_low: T(1.25, "PROVISIONAL", "기술문서 ver3 §1.1 '시작값'"),
-  AR_high: T(1.5, "PROVISIONAL", "기술문서 ver3 §1.1 '시작값'"),
+  AR_low: T(1.398, "ESTABLISHED", "SizeKorea 8차(2021) 20-39세 P25, L = 눈살-이마(No.326) + 얼굴수직길이(No.108), n≈2333"),
+  AR_high: T(1.579, "ESTABLISHED", "SizeKorea 8차 20-39 P75 (정규분포 가정 μ±0.674σ)"),
   FR_short: T(1.6, "ESTABLISHED", "안면비율 단/중/장모 [1] 문헌 인용"),
   FR_long: T(1.699, "ESTABLISHED", "안면비율 [1] 문헌 인용"),
-  parallelTol: T(0.08, "PROVISIONAL", "|F-1|, |J-1| 동률 판정 '시작값'"),
-  foreheadDominant: T(1.08, "PROVISIONAL", "F 이마 우세 '시작값'"),
-  diamondMax: T(0.92, "PROVISIONAL", "마름모 F<,J< '시작값' (= 1-parallelTol)"),
-  jawNarrow: T(0.9, "PROVISIONAL", "J 턱 좁음 '시작값'"),
-  // 하악각: 문서에 수치 컷 없음("작을수록 각짐"). 임시 경계.
+  parallelTol: T(0.08, "PROVISIONAL", "|F-1|, |J-1| 동률 판정 '시작값' — Wf 한국 인체측정 표준 미수록(아래 참조)"),
+  foreheadDominant: T(1.08, "PROVISIONAL", "F 이마 우세 '시작값' — Wf(이마너비)는 SizeKorea 5·6·7·8차 + KRISS 머리측정(#035) + CT 표준얼굴(#051) + 6차/청소년 3D + 얼굴유형분류(#045) + 3D 모델링(#046/052) + 국제비교(#029) 13건 전수 검색 미수록(한국 인체측정 표준 항목 아님)"),
+  diamondMax: T(0.92, "PROVISIONAL", "마름모 F<,J< '시작값' (= 1-parallelTol). Wf 미보정으로 PROVISIONAL 유지"),
+  jawNarrow: T(0.801, "ESTABLISHED", "SizeKorea 8차 20-39 J=Wj/Wc P25 — 인구 하위 25%가 V/하트형 후보"),
+  // 하악각: 8차 미측정 → UNDETERMINED 유지.
   jawAngleAngular_deg: T(125, "UNDETERMINED", "각짐<->부드러움 임시 경계. 표본 보정 필수"),
-  // ⚠️ INCONSISTENCY: AR과 FR이 문서상 둘 다 L/W_c로 정의됨(스케일 불일치).
-  //    구현 전 FR의 분모/분자 정의를 원문에서 재확인할 것. 일단 AR=L/W_c로 사용.
 };
 
 /* ──────────────────────────────────────────────────────────
@@ -58,20 +56,16 @@ export const TRUST = {
     "Todorov·Baron·Oosterhof(2008) Table 1. 단 원계수는 FaceGen morph 단위 기준 -> 기하 z-score 적용은 근사."
   ),
   commercialCutZ: T(0, "UNDETERMINED", "가중합 임계. 라벨(커머셜/비커머셜) 데이터로 보정"),
-  // z-score용 norm (지표별 평균/표준편차)
-  // ⚠ INTERIM n=1: 일반인 평균(m)은 AI Hub 샘플 1명(S001 정면·중립·표준조명·무액세서리)에서 산출.
-  // SD는 모델 표본 67명에서 임시 차용 (inter-person scale 추정용; 일반인 SD 도착 즉시 교체).
-  // (AI Hub 샘플엔 S001~S006이 있었지만 실은 1명이 액세서리만 바꿔서 찍은 것 → 실제 인구 n=1)
-  // gsf-calibration/general_pop_images/ 에 일반인 사진 추가 → bash update.sh → 자동 재계산.
+  // z-score용 norm (지표별 평균/표준편차) — SizeKorea 8차 20-39 비율 (delta method, n≈2333)
   norm: T(
     {
-      browAngle: { m: 4.0709, s: 4.1132 },
-      cheekProjection: { m: 0.8395, s: 0.0491 },
-      jawWidth: { m: 0.7889, s: 0.0217 },
-      sellionDepth: { m: 0.2831, s: 0.0252 },
+      browAngle: { m: 0, s: 1 },                  // 8차 미수록 — 항등 유지
+      cheekProjection: { m: 0.6729, s: 0.0603 },  // Wc/L (L=눈살-이마+얼굴수직길이) 남녀 평균
+      jawWidth: { m: 0.8573, s: 0.0828 },         // Wj/Wc 남녀 평균
+      sellionDepth: { m: 0, s: 1 },                // 8차 미수록 — 항등 유지
     },
     "PROVISIONAL",
-    "INTERIM n=1 일반인 mean (S001) + 모델 표본 SD 임시 차용. 일반인 표본 확장 즉시 교체. gsf-calibration/general_pop_scores.csv"
+    "SizeKorea 8차 20-39 Wc/L·Wj/Wc 남녀 평균 (delta method). browAngle·sellionDepth는 미수록 → 항등 norm (z=0)"
   ),
 };
 
@@ -80,27 +74,33 @@ export const TRUST = {
  * ────────────────────────────────────────────────────────── */
 export const SWN = {
   // 1단계: 내추럴 점수
-  shoulderSlopeAngular_deg: T(16, "PROVISIONAL", "ASTM D5219 측정신뢰도는 확정, 16° 적용 컷은 잠정"),
+  shoulderSlopeAngular_deg: T(23.5, "ESTABLISHED", "SizeKorea 8차 20-39 P25 — 인구 하위 25% (각진 어깨) 컷, n≈2333"),
   natWeights: T({ shoulderAngular: 1.5, jointWidth: 1.5, lowSoftTissue: 1, thinNeck: 1 }, "PROVISIONAL", "임의 가중"),
   natThreshold: T(2.5, "PROVISIONAL", "Nscore>=2.5 -> 내추럴. 임의값"),
-  jointWidthIndex: { female: T(5.2, "PROVISIONAL", "ISAK·SizeKorea 평균"), male: T(5.5, "PROVISIONAL", "ISAK·차수정2019") },
-  whtr: { female: T(0.43, "PROVISIONAL", "WHO 일반평균"), male: T(0.45, "PROVISIONAL", "WHO 일반평균") },
+  jointWidthIndex: {
+    female: T(6.05, "ESTABLISHED", "SizeKorea 8차 20-39 (팔꿈치+무릎)/2/키×100 여자 P75 (인구 상위 25% = 관절 넓음)"),
+    male: T(6.03, "ESTABLISHED", "SizeKorea 8차 20-39 남자 P75"),
+  },
+  whtr: {
+    female: T(0.422, "ESTABLISHED", "SizeKorea 8차 20-39 허리둘레/키 여자 P25 — 인구 하위 25% (내추럴 = 연조직 적음)"),
+    male: T(0.449, "ESTABLISHED", "SizeKorea 8차 20-39 남자 P25"),
+  },
 
   // 2단계: Straight(+) vs Wave(-) z합
   swMargin: T(0.5, "PROVISIONAL", "±임계. 안이면 경계(질감 1회 확인)"),
   // 측정 방향(컷이 아닌 표준): 흉곽 AP/횡경 >0.75 두꺼움 / <0.65 얇음 (ISO ICC 0.85~0.95)
   thoraxFlatRef: { thick: T(0.75, "ESTABLISHED", "ISO 7250-1 흉곽 AP/횡경"), thin: T(0.65, "ESTABLISHED", "ISO 7250-1") },
   bhrRef: T(0.97, "ESTABLISHED", "ISO 8559-1 가슴/엉덩이"),
-  // 2단계 4지표 z-score norm (성별별) — 표본으로 채울 것
+  // 2단계 4지표 z-score norm — SizeKorea 8차 20-39 (delta method)
   swNorm: T(
     {
-      thoraxFlat: { m: 0.7, s: 0.08 },
-      bhr: { m: 0.97, s: 0.05 },
-      bustHeight: { m: 0.0, s: 1 },
-      waistPos: { m: 0.0, s: 1 },
+      thoraxFlat: { m: 0.7048, s: 0.0852 },   // 가슴두께(No.025)/가슴너비(No.018) 남녀 평균
+      bhr: { m: 0.9816, s: 0.0945 },           // 가슴둘레(No.041)/엉덩이둘레(No.048) 남녀 평균
+      bustHeight: { m: 0.0, s: 1 },            // 8차 미수록 (측면 가슴정점/키) — 항등 유지
+      waistPos: { m: 0.0, s: 1 },              // 8차 미수록 (측면 허리위치) — 항등 유지
     },
-    "UNDETERMINED",
-    "데모용 임시 norm. 파일럿으로 성별별 교체"
+    "PROVISIONAL",
+    "SizeKorea 8차 20-39 thoraxFlat·bhr 남녀 평균 (delta method, n≈2333). bustHeight·waistPos 8차 미수록 → 항등"
   ),
 };
 
@@ -110,19 +110,20 @@ export const SWN = {
  * ────────────────────────────────────────────────────────── */
 export const AXES = {
   // ① 실루엣(여: 어깨/골반) / V-Taper(남: 가슴둘레-허리둘레 드롭, cm)
+  // ⚠ 8차 "엉덩이너비"는 앉은 자세(앉은엉덩이너비)뿐, 우리 정면 측정과 정의 불일치 → 보정 보류
   silhouette: {
-    female: { shoulderType: T(1.1, "PROVISIONAL", "어깨형>=1.10"), curveType: T(1.0, "PROVISIONAL", "곡선형<1.00") },
+    female: { shoulderType: T(1.1, "PROVISIONAL", "어깨형>=1.10 (8차 hip 정의 불일치로 보류)"), curveType: T(1.0, "PROVISIONAL", "곡선형<1.00") },
     male: { vType_cm: T(21, "PROVISIONAL", "V형>=21cm, KS K 0050:2024"), straight_cm: T(16, "PROVISIONAL", "직선형<16cm") },
   },
-  // ② 비율: 좌고비 = 앉은키/신장×100
+  // ② 비율: 좌고비 = 앉은키/신장×100 — SizeKorea 8차 20-39 P25/P75
   ratio: {
-    female: { longLeg: T(50, "PROVISIONAL", "롱레그<=50"), longTorso: T(52.1, "PROVISIONAL", "롱토르소>=52.1") },
-    male: { longLeg: T(52.0, "PROVISIONAL", "롱레그<=52.0 (수정본)"), longTorso: T(53.6, "PROVISIONAL", "롱토르소>=53.6") },
+    female: { longLeg: T(52.7, "ESTABLISHED", "SizeKorea 8차 20-39 sitting/height×100 여자 P25 (n=1230)"), longTorso: T(55.9, "ESTABLISHED", "여자 P75") },
+    male: { longLeg: T(52.0, "ESTABLISHED", "SizeKorea 8차 20-39 남자 P25 (n=1103)"), longTorso: T(55.3, "ESTABLISHED", "남자 P75") },
   },
-  // ③ 프레임: 어깨너비/신장
+  // ③ 프레임: 어깨너비/신장 — SizeKorea 8차 20-39 P25/P75
   frame: {
-    female: { slim: T(0.225, "PROVISIONAL", "슬림<=0.225"), wide: T(0.235, "PROVISIONAL", "와이드>=0.235") },
-    male: { slim: T(0.244, "PROVISIONAL", "슬림<=0.244 (수정본)"), wide: T(0.256, "PROVISIONAL", "와이드>=0.256") },
+    female: { slim: T(0.210, "ESTABLISHED", "SizeKorea 8차 20-39 shoulder/height 여자 P25 (n=1230)"), wide: T(0.227, "ESTABLISHED", "여자 P75") },
+    male: { slim: T(0.221, "ESTABLISHED", "SizeKorea 8차 20-39 남자 P25 (n=1103)"), wide: T(0.239, "ESTABLISHED", "남자 P75") },
   },
 };
 
