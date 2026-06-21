@@ -157,6 +157,24 @@ export default function UploadPage() {
           <p style={{ fontSize: 11, color: "var(--gray)", marginTop: 6 }}>* 필수 입력. 발 사이즈는 선택.</p>
         </div>
 
+        <div style={{ marginBottom: 20 }}>
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--indigo)", marginBottom: 10 }}>퍼스널컬러 <span style={{ fontWeight: 400, color: "var(--gray)" }}>(선택 — 메이크업·트렌드 추천 정확도 ↑)</span></h2>
+          <select
+            value={state.personalColor}
+            onChange={(e) => dispatch({ type: "SET_PERSONAL_COLOR", personalColor: e.target.value as typeof state.personalColor })}
+            style={{ display: "block", width: "100%", padding: "8px 10px", border: "2px solid #ddd", borderRadius: 6, fontSize: 14, color: "var(--black)", fontWeight: 500, background: "var(--white)" }}
+          >
+            <option value="unknown">모름 (선택 안 함)</option>
+            <option value="summer">여름 쿨 — 핑크빛, 부드러운 인상 (한국인 다수)</option>
+            <option value="winter">겨울 쿨 — 블루빛, 대비 뚜렷</option>
+            <option value="autumn">가을 웜 — 황갈빛, 차분</option>
+            <option value="spring">봄 웜 — 노란빛, 화사</option>
+          </select>
+          <p style={{ fontSize: 11, color: "var(--gray)", marginTop: 6 }}>
+            확실하지 않으면 &quot;모름&quot; 선택 — 색 추천은 일반 가이드로 제공됩니다.
+          </p>
+        </div>
+
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button onClick={proceed} disabled={!hasRequired}
             style={{ padding: "12px 24px", borderRadius: 8, border: "none", background: "var(--black)", color: "var(--white)", fontSize: 14, fontWeight: 700, cursor: hasRequired ? "pointer" : "not-allowed", opacity: hasRequired ? 1 : 0.25 }}>

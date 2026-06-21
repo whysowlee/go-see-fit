@@ -7,6 +7,7 @@ import type { LandmarkPoint } from "./mediapipe/bodyExtract";
 import type { SideDepths } from "./mediapipe/bodyExtract";
 import type { FaceLandmarkKey } from "./mediapipe/faceMap";
 import type { Point } from "./geometry";
+import type { PersonalColor } from "./personalColor";
 
 export interface CropRect { x: number; y: number; w: number; h: number }
 
@@ -75,6 +76,7 @@ const emptyVF: VFState = { status: "idle", selectedLabels: [], generatedFromLabe
 export interface AppState {
   sex: Sex | null;
   bodyInputs: BodyInputs;
+  personalColor: PersonalColor; // 사용자 직접 선택 (드롭다운). 기본 "unknown".
   photos: Photos | null;
   landmarks: LandmarkData | null;
   editorGroups: EditorGroupsData | null;
@@ -83,6 +85,7 @@ export interface AppState {
 
 export type AppAction =
   | { type: "SET_SEX"; sex: Sex }
+  | { type: "SET_PERSONAL_COLOR"; personalColor: PersonalColor }
   | { type: "SET_BODY_INPUTS"; inputs: Partial<BodyInputs> }
   | { type: "SET_PHOTOS"; photos: Photos }
   | { type: "SET_LANDMARKS"; landmarks: LandmarkData }
@@ -99,6 +102,7 @@ export type AppAction =
 export const initialState: AppState = {
   sex: null,
   bodyInputs: { heightCm: null, bustIn: null, waistIn: null, hipIn: null, footSize: null },
+  personalColor: "unknown",
   photos: null,
   landmarks: null,
   editorGroups: null,
@@ -111,6 +115,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case "SET_SEX":
       return { ...state, sex: action.sex };
+    case "SET_PERSONAL_COLOR":
+      return { ...state, personalColor: action.personalColor };
     case "SET_BODY_INPUTS":
       return { ...state, bodyInputs: { ...state.bodyInputs, ...action.inputs } };
     case "SET_PHOTOS":

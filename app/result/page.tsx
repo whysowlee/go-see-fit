@@ -5,8 +5,13 @@ import { useApp, VF_SESSION_LIMIT } from "@/lib/store";
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { classifyFaceShape, computeTrust, type FaceShape } from "@/lib/faceShape";
 import { classifySkeleton, classifyAxes, describe, type Skeleton } from "@/lib/bodyType";
+import { classifySilhouette, silhouetteInsight } from "@/lib/silhouette";
+import { getMakeupGuide, trustToImpression } from "@/lib/makeup";
+import { getTrendRecommendations } from "@/lib/trend";
+import { PERSONAL_COLORS } from "@/lib/personalColor";
 import { extractBodyMeasurements } from "@/lib/mediapipe/bodyExtract";
-import { FACE_IDX, FACE_IDX_EXTRA } from "@/lib/mediapipe/faceMap";
+import { FACE_IDX, FACE_IDX_EXTRA, mapToFaceProportionPoints } from "@/lib/mediapipe/faceMap";
+import { computeFaceProportion } from "@/lib/faceProportion";
 import { getStyleRecommendation, getFaceStyling, type StyleChip, type VFCategory } from "@/lib/recommend";
 import { FaceShapeTab, ResultTabBar, type FaceResultData, type SoftScore, type DiagItem, type VFControlProps } from "@/components/ResultFaceTab";
 import { BodyTypeTab, type BodyResultData, type BodyPoint } from "@/components/ResultBodyTab";
@@ -156,18 +161,35 @@ export default function ResultPage() {
     const soft: SoftScore[] = sorted.slice(0, 3).map(([label, score]) => ({ label, score }));
     const impression = 1 / (1 + Math.exp(-trust.score * 0.8));
 
+    // 세로 3분할(상/중/하안) — 1:1:1 기준 이탈 점수 + cute↔mature
+    const fw = photos.face.croppedWidth || photos.face.width;
+    const fh = photos.face.croppedHeight || photos.face.height;
+    const proportion = computeFaceProportion(mapToFaceProportionPoints(mesh, fw, fh, ov));
+
     const brow = pairTilt(points, "browInnerL", "browInnerR");
     const zygo = pairTilt(points, "zygoL", "zygoR");
     const top = points.find((p) => p.id === "foreheadTop");
     const bottom = points.find((p) => p.id === "menton");
     const centerXDiff = top && bottom ? Math.abs(top.x - bottom.x) : 0;
 
-    return { faceResult, trust, points, soft, impression, brow, zygo, centerXDiff, top, bottom };
+    return { faceResult, trust, points, soft, impression, proportion, brow, zygo, centerXDiff, top, bottom };
   }, [lm, photos]);
+
+  // ── 메이크업 + 트렌드 추천 (얼굴형 + Todorov 인상 + 퍼스널컬러) ──
+  const beautyCalc = useMemo(() => {
+    if (!faceCalc) return null;
+    const faceShape = faceCalc.faceResult.primary;
+    const impression = trustToImpression(faceCalc.trust.label);
+    const pc = state.personalColor;
+    const makeup = getMakeupGuide(faceShape, impression, pc);
+    const trends = getTrendRecommendations(faceShape, pc);
+    const pcMeta = PERSONAL_COLORS[pc];
+    return { faceShape, impression, personalColor: pc, pcMeta, makeup, trends };
+  }, [faceCalc, state.personalColor]);
 
   const doFetchFaceTip = useCallback(() => {
     if (!faceCalc) return;
-    const { brow, zygo, centerXDiff, faceResult, trust } = faceCalc;
+    const { brow, zygo, centerXDiff, faceResult, trust, proportion } = faceCalc;
     const m = faceResult.metrics;
     fetchPosingTip("face", {
       browTiltDeg: +brow.deg.toFixed(1),
@@ -177,6 +199,10 @@ export default function ResultPage() {
       centerOffsetX: +centerXDiff.toFixed(3),
       AR: +m.AR.toFixed(2), F: +m.F.toFixed(2), J: +m.J.toFixed(2), T: +m.T.toFixed(2),
       jawAngle: +m.jawAngle.toFixed(1),
+      thirdsRatio: proportion.ratioStr,
+      thirdsDominant: proportion.dominant,
+      thirdsBalance: +proportion.balanceScore.toFixed(2),
+      cuteMature: proportion.cuteMatureLabel,
     }, {
       faceShape: faceResult.primary,
       faceShapeScores: Object.fromEntries(Object.entries(faceResult.scores).slice(0, 3)),
@@ -192,7 +218,7 @@ export default function ResultPage() {
 
   const faceData: FaceResultData | null = useMemo(() => {
     if (!faceCalc || !photos) return null;
-    const { points, soft, impression, brow, zygo, centerXDiff, top, bottom, faceResult } = faceCalc;
+    const { points, soft, impression, proportion, brow, zygo, centerXDiff, top, bottom, faceResult } = faceCalc;
 
     const diagnosis: DiagItem[] = [
       {
@@ -216,8 +242,16 @@ export default function ResultPage() {
       photoUrl: photos.face.croppedUrl || photos.face.url,
       fittingUrl: vf.face.imageDataUrl ?? undefined,
       points, soft, impression, diagnosis,
+      proportion: {
+        upper: proportion.upper, middle: proportion.middle, lower: proportion.lower,
+        ratioStr: proportion.ratioStr, balanceScore: proportion.balanceScore, dominant: proportion.dominant,
+      },
+      cuteMature: proportion.cuteMature,
       posingTip: faceTip ?? "포징 팁 생성 중…",
-      styling: getFaceStyling(faceResult.primary),
+      styling: getFaceStyling(faceResult.primary, {
+        dominant: proportion.dominant,
+        cuteMatureLabel: proportion.cuteMatureLabel,
+      }),
     };
   }, [faceCalc, photos, faceTip, vf.face.imageDataUrl]);
 
@@ -242,6 +276,19 @@ export default function ResultPage() {
     });
     const skel = classifySkeleton(extract.measurements, state.sex, extract.sideAvailable);
     const axes = classifyAxes(extract.measurements, state.sex);
+
+    // ── 정면 실루엣 분류 (K-means k=4 NCC) ──
+    // 입력: bust/waist/hip 둘레 (cm). 사용자 inch 입력을 cm 변환.
+    const IN2CM = 2.54;
+    const bustCm = bi.bustIn != null ? bi.bustIn * IN2CM : null;
+    const waistCm = bi.waistIn != null ? bi.waistIn * IN2CM : null;
+    const hipCm = bi.hipIn != null ? bi.hipIn * IN2CM : null;
+    const silhouette =
+      bustCm != null && waistCm != null && hipCm != null
+        ? classifySilhouette({ bust: bustCm, waist: waistCm, hip: hipCm }, state.sex)
+        : null;
+    const skelHint = { type: skel.type as "스트레이트" | "웨이브" | "내추럴" | "보류" };
+    const silhouetteInsightText = silhouette ? silhouetteInsight(silhouette, skelHint) : null;
 
     const pose = lm.frontPose;
     const foMap = lm.frontOverrides;
@@ -286,7 +333,7 @@ export default function ResultPage() {
     const sole = points.find((p) => p.id === "sole")!;
     const centerDrift = Math.abs(crown.x - sole.x);
 
-    return { extract, skel, axes, points, soft, detail, sh, hip, centerDrift };
+    return { extract, skel, axes, points, soft, detail, sh, hip, centerDrift, silhouette, silhouetteInsightText };
   }, [lm, photos, state.sex, bi]);
 
   // fetch body posing tip
@@ -500,6 +547,8 @@ export default function ResultPage() {
                 vf={buildVFControl("face")}
               />
             )}
+            {beautyCalc && <MakeupCard beauty={beautyCalc} />}
+            {beautyCalc && <TrendCard beauty={beautyCalc} />}
           </div>
           <div className="print-page-break" style={{ display: tab === "body" ? "block" : "none" }}>
             {bodyData && (
@@ -511,9 +560,184 @@ export default function ResultPage() {
                 vf={buildVFControl("body")}
               />
             )}
+            {bodyCalc?.silhouette && (
+              <SilhouetteCard
+                silhouette={bodyCalc.silhouette}
+                insight={bodyCalc.silhouetteInsightText}
+              />
+            )}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────
+ * 실루엣 · 메이크업 · 트렌드 카드 (개인화 결과)
+ * ────────────────────────────────────────────────────────── */
+
+const cardStyle: React.CSSProperties = {
+  background: "#fff",
+  border: "1px solid #e5e5e5",
+  borderRadius: 10,
+  padding: "16px 18px",
+  marginTop: 16,
+};
+
+const h3Style: React.CSSProperties = {
+  fontSize: 14,
+  fontWeight: 700,
+  color: "var(--indigo)",
+  marginBottom: 10,
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+};
+
+function SilhouetteCard({
+  silhouette,
+  insight,
+}: {
+  silhouette: NonNullable<ReturnType<typeof classifySilhouette>>;
+  insight: string | null;
+}) {
+  const p = silhouette.percentiles;
+  return (
+    <div style={cardStyle}>
+      <h3 style={h3Style}>👗 정면 실루엣 (외곽선 비율)</h3>
+      <div style={{ fontSize: 18, fontWeight: 700, color: "var(--black)" }}>
+        {silhouette.labelKo} <span style={{ fontSize: 13, fontWeight: 400, color: "var(--gray)" }}>({silhouette.label})</span>
+      </div>
+      {silhouette.koreanFreq > 0 && (
+        <div style={{ fontSize: 12, color: "var(--gray)", marginTop: 4 }}>
+          한국 20-39세 여성의 약 {silhouette.koreanFreq.toFixed(1)}%
+        </div>
+      )}
+      {p && (
+        <div style={{ marginTop: 10, fontSize: 12, color: "#555", lineHeight: 1.7 }}>
+          <div>📐 가슴 둘레: P{p.bust} · 허리: P{p.waist} · 엉덩이: P{p.hip}</div>
+          <div>📊 위-아래 비율 (Drop III): P{p.dIII}</div>
+          <div>📊 상체 잘록도 (Drop I): P{p.dI} · 하체 잘록도 (Drop II): P{p.dII}</div>
+        </div>
+      )}
+      {insight && (
+        <div style={{ marginTop: 12, padding: "10px 12px", background: "#f7f5ff", borderRadius: 6, fontSize: 12, color: "#333" }}>
+          💡 {insight}
+        </div>
+      )}
+      <p style={{ fontSize: 10, color: "var(--gray)", marginTop: 10 }}>
+        ⚙️ K-means k=4 NCC · SK 8차 여성 20-39세 (n=1,230) PROVISIONAL · 참고용
+      </p>
+    </div>
+  );
+}
+
+function MakeupCard({
+  beauty,
+}: {
+  beauty: { faceShape: string; impression: "soft" | "sharp" | "boundary"; pcMeta: { labelKo: string }; makeup: ReturnType<typeof getMakeupGuide> };
+}) {
+  const m = beauty.makeup;
+  const impressionLabel = beauty.impression === "soft" ? "소프트/커머셜" : beauty.impression === "sharp" ? "샤프/비커머셜" : "경계";
+  return (
+    <div style={cardStyle}>
+      <h3 style={h3Style}>💄 메이크업 가이드</h3>
+      <div style={{ fontSize: 12, color: "var(--gray)", marginBottom: 12 }}>
+        얼굴형 <strong style={{ color: "var(--black)" }}>{beauty.faceShape}</strong>
+        {" · "}인상 <strong style={{ color: "var(--black)" }}>{impressionLabel}</strong>
+        {" · "}퍼스널컬러 <strong style={{ color: "var(--black)" }}>{beauty.pcMeta.labelKo}</strong>
+      </div>
+
+      <Section title="✨ 형태 보정 (얼굴형 공통)">
+        <div>{m.shapeCorrection}</div>
+      </Section>
+
+      <Section title={`✨ ${impressionLabel} 인상 가이드`}>
+        <div>{m.impressionGuide}</div>
+      </Section>
+
+      <Section title="📍 색조 배치 추천">
+        <div>✅ {m.placement.recommended}</div>
+        <div style={{ color: "#c0392b", marginTop: 4 }}>❌ {m.placement.avoid}</div>
+      </Section>
+
+      {m.colorPalette ? (
+        <Section title="🎨 퍼스널컬러 × 인상 색 추천">
+          <div>✅ {m.colorPalette.recommended}</div>
+          {m.colorPalette.softTone && <div style={{ marginTop: 2 }}>· 소프트 톤: {m.colorPalette.softTone}</div>}
+          {m.colorPalette.sharpTone && <div style={{ marginTop: 2 }}>· 샤프 톤: {m.colorPalette.sharpTone}</div>}
+          <div style={{ color: "#c0392b", marginTop: 4 }}>❌ {m.colorPalette.avoid}</div>
+        </Section>
+      ) : (
+        <Section title="🎨 색 추천">
+          <div style={{ color: "var(--gray)" }}>
+            퍼스널컬러를 선택하면 정확한 색 추천을 받을 수 있어요. (업로드 페이지에서 설정)
+          </div>
+        </Section>
+      )}
+
+      <Section title="💋 립으로 원하는 인상 만들기">
+        {(Object.entries(m.lipByDesiredImage) as [keyof typeof m.lipByDesiredImage, string][]).map(([k, v]) => (
+          <div key={k} style={{ fontSize: 11, marginTop: 2 }}>
+            · <strong>{k}</strong>: {v}
+          </div>
+        ))}
+      </Section>
+
+      <p style={{ fontSize: 10, color: "var(--gray)", marginTop: 10 }}>
+        출처: makeup_color_logic.docx (표 2 · 표 A · 표 B + 립 1.2)
+      </p>
+    </div>
+  );
+}
+
+function TrendCard({
+  beauty,
+}: {
+  beauty: { pcMeta: { labelKo: string }; trends: ReturnType<typeof getTrendRecommendations> };
+}) {
+  const { recommended, caution } = beauty.trends;
+  return (
+    <div style={cardStyle}>
+      <h3 style={h3Style}>✨ 2025-26 메이크업 트렌드 룩</h3>
+      <div style={{ fontSize: 12, color: "var(--gray)", marginBottom: 12 }}>
+        얼굴형 + 퍼스널컬러({beauty.pcMeta.labelKo}) 기반 추천
+      </div>
+
+      <Section title={`✅ 추천 (${recommended.length})`}>
+        {recommended.map((look) => (
+          <div key={look.id} style={{ marginBottom: 8, paddingBottom: 8, borderBottom: "1px dashed #eee" }}>
+            <div style={{ fontWeight: 600 }}>{look.name} <span style={{ fontSize: 10, color: "var(--gray)", fontWeight: 400 }}>· {look.source}</span></div>
+            <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>{look.mood}</div>
+            <div style={{ fontSize: 11, color: "var(--indigo)", marginTop: 4 }}>💡 {look.tip}</div>
+          </div>
+        ))}
+      </Section>
+
+      {caution.length > 0 && (
+        <Section title={`⚠️ 주의 (${caution.length}) — 변형하면 가능`}>
+          {caution.map((look) => (
+            <div key={look.id} style={{ marginBottom: 6 }}>
+              <div style={{ fontWeight: 600 }}>{look.name}</div>
+              <div style={{ fontSize: 11, color: "var(--gray)", marginTop: 2 }}>{look.mood}</div>
+            </div>
+          ))}
+        </Section>
+      )}
+
+      <p style={{ fontSize: 10, color: "var(--gray)", marginTop: 10 }}>
+        출처: trend_mapping.pdf · Elle/Bazaar/W Korea 2025-26
+      </p>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginTop: 10, fontSize: 12, color: "#333", lineHeight: 1.6 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--black)", marginBottom: 4 }}>{title}</div>
+      {children}
     </div>
   );
 }
