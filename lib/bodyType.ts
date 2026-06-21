@@ -58,10 +58,11 @@ export function classifySkeleton(meas: BodyMeasurements, sex: Sex, sideAvailable
   }
 
   // ── 2단계: Straight(+) vs Wave(-) z합 ──
+  // 골격-실루엣 직교 (2026-06-21): bhr(가슴/엉덩이 둘레)은 lib/silhouette.ts 가 정면 외곽선
+  // 비율로 사용. 골격은 측면 두께·각도만 다룸. SK 8차 보정 PROVISIONAL.
   const n = SWN.swNorm.value;
   const sw =
     zscore(meas.thoraxFlat, n.thoraxFlat.m, n.thoraxFlat.s) +
-    zscore(meas.bhr, n.bhr.m, n.bhr.s) +
     zscore(meas.bustHeight, n.bustHeight.m, n.bustHeight.s) +
     zscore(meas.waistPos, n.waistPos.m, n.waistPos.s);
   const margin = SWN.swMargin.value;

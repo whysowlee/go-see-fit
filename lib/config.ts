@@ -91,16 +91,17 @@ export const SWN = {
   // 측정 방향(컷이 아닌 표준): 흉곽 AP/횡경 >0.75 두꺼움 / <0.65 얇음 (ISO ICC 0.85~0.95)
   thoraxFlatRef: { thick: T(0.75, "ESTABLISHED", "ISO 7250-1 흉곽 AP/횡경"), thin: T(0.65, "ESTABLISHED", "ISO 7250-1") },
   bhrRef: T(0.97, "ESTABLISHED", "ISO 8559-1 가슴/엉덩이"),
-  // 2단계 4지표 z-score norm — SizeKorea 8차 20-39 (delta method)
+  // 2단계 3지표 z-score norm — 골격(SWN)은 측면 두께·각도 전용 (2026-06-21)
+  // bhr(가슴/엉덩이 둘레)은 lib/silhouette.ts 가 정면 외곽선 분류용으로 사용 — 직교 분리.
   swNorm: T(
     {
       thoraxFlat: { m: 0.7048, s: 0.0852 },   // 가슴두께(No.025)/가슴너비(No.018) 남녀 평균
-      bhr: { m: 0.9816, s: 0.0945 },           // 가슴둘레(No.041)/엉덩이둘레(No.048) 남녀 평균
       bustHeight: { m: 0.0, s: 1 },            // 8차 미수록 (측면 가슴정점/키) — 항등 유지
       waistPos: { m: 0.0, s: 1 },              // 8차 미수록 (측면 허리위치) — 항등 유지
     },
     "PROVISIONAL",
-    "SizeKorea 8차 20-39 thoraxFlat·bhr 남녀 평균 (delta method, n≈2333). bustHeight·waistPos 8차 미수록 → 항등"
+    "SizeKorea 8차 20-39 thoraxFlat 남녀 평균 (delta method, n≈2333). bustHeight·waistPos 8차 미수록 → 항등. " +
+      "bhr 항목은 골격-실루엣 직교화로 제거 (silhouette.ts로 이관, 2026-06-21)."
   ),
 };
 

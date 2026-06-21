@@ -1,6 +1,7 @@
 import {
   FaceLandmarker,
   PoseLandmarker,
+  ImageSegmenter,
   FilesetResolver,
 } from "@mediapipe/tasks-vision";
 
@@ -10,6 +11,9 @@ const FACE_MODEL =
   "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
 const POSE_MODEL =
   "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
+// selfie_multiclass: 사람 vs 배경 + 옷·머리카락 등 멀티 카테고리. 정면 외곽선 분리에 적합.
+const SEGMENT_MODEL =
+  "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/1/selfie_multiclass_256x256.tflite";
 
 let visionPromise: Promise<Awaited<ReturnType<typeof FilesetResolver.forVisionTasks>>> | null = null;
 
@@ -49,4 +53,20 @@ export function getPoseLandmarker(): Promise<PoseLandmarker> {
   return posePromise;
 }
 
-export type { FaceLandmarker, PoseLandmarker };
+let segmentPromise: Promise<ImageSegmenter> | null = null;
+
+export function getImageSegmenter(): Promise<ImageSegmenter> {
+  if (!segmentPromise) {
+    segmentPromise = getVision().then((vision) =>
+      ImageSegmenter.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: SEGMENT_MODEL, delegate: "GPU" },
+        runningMode: "IMAGE",
+        outputCategoryMask: true,
+        outputConfidenceMasks: false,
+      }),
+    );
+  }
+  return segmentPromise;
+}
+
+export type { FaceLandmarker, PoseLandmarker, ImageSegmenter };
