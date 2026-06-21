@@ -7,6 +7,7 @@
  * 드래그 보정 UI에서 사용자가 미세 조정 가능.
  */
 import type { FaceLandmarks } from "../faceShape";
+import type { FaceProportionPoints } from "../faceProportion";
 import type { Point } from "../geometry";
 
 export interface LandmarkPoint {
@@ -49,6 +50,21 @@ export const FACE_IDX = {
 export const FACE_IDX_EXTRA = {
   browInnerR: 336,
   browPeakR: 334,
+} as const;
+
+/*
+ * 세로 3분할(상/중/하안)용 경계점.
+ *  trichion  = 10  (= foreheadCenterTop, 상안 위 끝; 헤어라인 근사 — pitch·앞머리에 불안정)
+ *  glabella  = 107·336 중점 (눈썹 안쪽 = 상/중 경계)
+ *  subnasale = 2   (코밑 = 중/하 경계; 정면 미드라인, 드래그 보정 가능)
+ *  menton    = 152 (= menton, 하안 아래 끝)
+ */
+export const FACE_IDX_PROPORTION = {
+  trichion: 10,
+  glabellaL: 107,
+  glabellaR: 336,
+  subnasale: 2,
+  menton: 152,
 } as const;
 
 export type FaceLandmarkKey = keyof typeof FACE_IDX;
@@ -109,4 +125,31 @@ export function mapToFaceLandmarks(
     noseSellion: get("noseSellion"),
     noseTip: get("noseTip"),
   };
+}
+
+/**
+ * MediaPipe mesh → 세로 3분할 경계 4점(FaceProportionPoints).
+ * 기존 드래그 보정점을 재사용: trichion←foreheadCenterTop, menton←menton,
+ * glabella 좌←browInnerL(보정 가능)·우←336(mesh). subnasale 는 mesh 전용.
+ * 좌표는 mapToFaceLandmarks 와 동일하게 픽셀 단위로 변환(종횡 스케일 일치).
+ */
+export function mapToFaceProportionPoints(
+  mesh: LandmarkPoint[],
+  imageWidth: number,
+  imageHeight: number,
+  overrides?: Partial<Record<FaceLandmarkKey, Point>>,
+): FaceProportionPoints {
+  const px = (idx: number): Point => {
+    const lm = mesh[idx];
+    // z 는 MediaPipe 규약상 x 와 같은 스케일(이미지 너비 기준) → ×imageWidth 로 통일.
+    // (x=×W, y=×H, z=×W 픽셀 단위로 맞춰야 3D 정사영이 기하적으로 정확)
+    return { x: lm.x * imageWidth, y: lm.y * imageHeight, z: lm.z !== undefined ? lm.z * imageWidth : undefined };
+  };
+  const trichion = overrides?.foreheadCenterTop ?? px(FACE_IDX_PROPORTION.trichion);
+  const menton = overrides?.menton ?? px(FACE_IDX_PROPORTION.menton);
+  const glaL = overrides?.browInnerL ?? px(FACE_IDX_PROPORTION.glabellaL);
+  const glaR = px(FACE_IDX_PROPORTION.glabellaR);
+  const glabella: Point = { x: (glaL.x + glaR.x) / 2, y: (glaL.y + glaR.y) / 2 };
+  const subnasale = px(FACE_IDX_PROPORTION.subnasale);
+  return { trichion, glabella, subnasale, menton };
 }

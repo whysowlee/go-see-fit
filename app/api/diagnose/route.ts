@@ -14,6 +14,10 @@ const FACE_KEYS: Record<string, [string, string]> = {
   J: ["턱 너비비", "1보다 작으면 턱이 좁다"],
   T: ["관자/이마 비", "1보다 크면 상부가 넓다"],
   jawAngle: ["턱 각도", "작을수록 각진 턱"],
+  thirdsRatio: ["상:중:하안 비율(1:1:1 기준)", "각 값이 1에 가까울수록 균형"],
+  thirdsDominant: ["긴 부위", "상안/중안/하안 중 길게 나온 곳"],
+  thirdsBalance: ["3분할 균형 점수", "1에 가까울수록 1:1:1"],
+  cuteMature: ["나이 인상", "cute=동안·상안 우세, mature=성숙·하안 우세"],
   chinAngle: ["턱끝 각도", "작을수록 뾰족"],
   browTiltDeg: ["눈썹 좌우 기울기(도)", "작을수록 대칭"],
   browHigherSide: ["눈썹 높은 쪽", "L 또는 R"],
@@ -101,7 +105,7 @@ function buildPrompt(b: DiagnoseBody): string {
   const isFace = b.kind === "face";
   // 핵심 측정값만 (토큰 절약)
   const KEY_SUBSET = isFace
-    ? ["AR", "F", "J", "jawAngle", "browTiltDeg", "centerOffsetX"]
+    ? ["AR", "F", "J", "jawAngle", "thirdsRatio", "thirdsDominant", "cuteMature", "centerOffsetX"]
     : ["skeleton", "shoulderSlopeDeg", "shoulderHipRatio", "sittingHeightRatio", "shoulderTiltDeg", "pelvisTiltDeg"];
   const filtered: Record<string, Num> = {};
   if (b.measurements) for (const k of KEY_SUBSET) if (b.measurements[k] !== undefined) filtered[k] = b.measurements[k];

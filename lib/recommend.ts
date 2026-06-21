@@ -18,6 +18,7 @@ export interface StyleChip {
   category?: VFCategory;    // 가상 피팅 대상 분류
   prompt?: string;          // Gemini Nano Banana 한국어 묘사
   imageUrl?: string;
+  reason?: string;          // 왜 추천/비추천인지 (개인화 근거; 1차 피드백 'why')
 }
 
 // ══════════════════════════════════════════════════════
@@ -101,8 +102,75 @@ const FACE_REC: Record<FaceShape, FaceStyleRec> = {
   },
 };
 
-export function getFaceStyling(faceShape: FaceShape): FaceStyleRec {
-  return FACE_REC[faceShape] ?? FACE_REC["계란형"];
+// ── 세로 3분할(상/중/하안) · cute↔mature 기반 메이크업 개인화 ──
+// trend_mapping·makeup_color_logic 의 "상/중/하안 무게중심" 처방을 개인 수치로 트리거.
+// faceShape 는 넥라인·헤어를 정하고, 메이크업은 이 비율로 교체한다.
+
+export interface MakeupProportionInput {
+  dominant: "상안" | "중안" | "하안" | "균형";
+  cuteMatureLabel: "cute" | "mid" | "mature";
+}
+
+const mk = (label: string, prompt: string, reason: string): StyleChip => ({
+  label, group: "makeup", category: "makeup", prompt, reason,
+});
+const mkAvoid = (label: string, reason: string): StyleChip => ({ label, group: "makeup", category: "makeup", reason });
+
+// 두드러진(긴) 부위별 형태 보정 — 시각적으로 그 부위를 '짧게' 정돈하는 방향
+const THIRDS_MAKEUP: Record<MakeupProportionInput["dominant"], FaceStyleRec> = {
+  "중안": {
+    recommend: [
+      mk("가로 블러셔", "눈 아래에서 광대 방향으로 가로로 길게 펴 바른 블러셔", "중안부가 길어, 가로 블러셔로 끊으면 길이가 짧아 보여요"),
+      mk("눈 키우는 언더 채움", "언더라인과 애교살을 채워 눈을 크게 키운 메이크업", "눈~코 사이 여백을 채우면 중안부가 덜 길어 보여요"),
+    ],
+    avoid: [mkAvoid("긴 세로 노즈 셰이딩", "콧대 세로 음영은 중안부를 더 길어 보이게 해요")],
+  },
+  "하안": {
+    recommend: [
+      mk("턱선 세로 셰이딩", "턱끝과 턱선 아래에 세로로 넣은 셰이딩", "하안부가 길어, 턱 음영으로 길이를 단축해요"),
+      mk("또렷한 다크 매트 립", "선명한 다크 톤의 매트한 립", "시선을 입술에 모아 하관 비율을 정돈해요"),
+    ],
+    avoid: [mkAvoid("턱 아래 강한 하이라이트", "턱에 광을 주면 하안부가 더 길어 보여요")],
+  },
+  "상안": {
+    recommend: [
+      mk("헤어라인 셰이딩", "이마 헤어라인을 따라 자연스럽게 넣은 셰이딩", "상안(이마)이 넓어, 헤어라인 음영으로 정돈해요"),
+      mk("두껍고 살짝 내린 눈썹", "두께감 있고 위치를 살짝 내려 그린 눈썹", "눈썹을 또렷·약간 아래로 그려 이마 여백을 줄여요"),
+    ],
+    avoid: [mkAvoid("이마 전체 하이라이트", "상안에 광을 깔면 이마가 더 넓어 보여요")],
+  },
+  "균형": {
+    recommend: [
+      mk("절제된 1포인트", "전체를 정돈하고 한 곳만 강조한 절제된 메이크업", "3분할이 고른 편이라 형태 보정 부담이 적어요"),
+    ],
+    avoid: [],
+  },
+};
+
+// cute↔mature 표현 방향 (makeup_color_logic 인상 축)
+const CUTE_MATURE_MAKEUP: Record<MakeupProportionInput["cuteMatureLabel"], StyleChip[]> = {
+  "cute": [mk("코랄·피치 + 둥근 눈썹", "코랄·피치 블러셔와 둥근 눈썹의 화사한 동안 메이크업", "하안이 짧은 동안 인상을 살리는 소프트 방향")],
+  "mid": [],
+  "mature": [mk("세로 음영 + 각진 눈썹", "세로 셰이딩과 각진 눈썹의 또렷한 시크 메이크업", "하안 우세 성숙 인상에 어울리는 샤프 방향")],
+};
+
+export function personalizeMakeup(p: MakeupProportionInput): FaceStyleRec {
+  const thirds = THIRDS_MAKEUP[p.dominant];
+  return {
+    recommend: [...thirds.recommend, ...CUTE_MATURE_MAKEUP[p.cuteMatureLabel]],
+    avoid: [...thirds.avoid],
+  };
+}
+
+export function getFaceStyling(faceShape: FaceShape, p?: MakeupProportionInput): FaceStyleRec {
+  const base = FACE_REC[faceShape] ?? FACE_REC["계란형"];
+  if (!p) return base;
+  // 넥라인·헤어는 얼굴형 기반 유지, 메이크업은 비율 개인화로 교체
+  const personal = personalizeMakeup(p);
+  return {
+    recommend: [...base.recommend.filter((c) => c.category !== "makeup"), ...personal.recommend],
+    avoid: [...base.avoid.filter((c) => c.category !== "makeup"), ...personal.avoid],
+  };
 }
 
 // ══════════════════════════════════════════════════════

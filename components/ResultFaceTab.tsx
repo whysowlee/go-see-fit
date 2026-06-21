@@ -13,7 +13,11 @@ const C = {
 export interface FacePoint { id: string; x: number; y: number }
 export interface SoftScore { label: string; score: number }
 export interface DiagItem { name: string; value: string; badge?: string }
-export interface StyleChip { label: string; group?: string; category?: "garment" | "hair" | "makeup" }
+export interface StyleChip { label: string; group?: string; category?: "garment" | "hair" | "makeup"; reason?: string }
+export interface FaceProportionUI {
+  upper: number; middle: number; lower: number;
+  ratioStr: string; balanceScore: number; dominant: string;
+}
 export interface FaceResultData {
   photoUrl: string;
   fittingUrl?: string;
@@ -21,6 +25,8 @@ export interface FaceResultData {
   soft: SoftScore[];
   impression: number;
   diagnosis: DiagItem[];
+  proportion?: FaceProportionUI;
+  cuteMature?: number;
   posingTip: string;
   styling: { recommend: StyleChip[]; avoid: StyleChip[] };
 }
@@ -93,6 +99,54 @@ function ImpressionAxis({ value }: { value: number }) {
   </div>);
 }
 
+function CuteMatureAxis({ value }: { value: number }) {
+  const pos = Math.min(1, Math.max(0, value));
+  return (<div>
+    <div style={{ fontSize: 13, fontWeight: 700, color: C.indigo, marginBottom: 10 }}>나이 인상 (세로 무게중심)</div>
+    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: C.gray, marginBottom: 6 }}><span>cute · 하안 짧음</span><span>mature · 하안 긺</span></div>
+    <div style={{ position: "relative", height: 14 }}>
+      <div style={{ position: "absolute", top: 6, left: 0, right: 0, height: 2, background: C.track, borderRadius: 2 }} />
+      <div style={{ position: "absolute", top: 0, left: `calc(${pos * 100}% - 7px)`, width: 14, height: 14, borderRadius: "50%", background: C.indigo, border: `2px solid ${C.white}`, boxShadow: "0 0 0 1px rgba(0,0,0,0.08)" }} />
+    </div>
+  </div>);
+}
+
+function ThirdsPanel({ p }: { p: FaceProportionUI }) {
+  const segs = [
+    { key: "상안", v: p.upper, color: C.accent },
+    { key: "중안", v: p.middle, color: C.indigo },
+    { key: "하안", v: p.lower, color: C.ash },
+  ];
+  const balancePct = Math.round(p.balanceScore * 100);
+  const dominantText = p.dominant === "균형" ? "상·중·하안 균형" : `${p.dominant}부가 길어요`;
+  return (<div style={{ border: `0.5px solid ${C.line05}`, borderRadius: 8, padding: 12 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+      <span style={{ fontSize: 13, fontWeight: 700, color: C.indigo }}>상·중·하안 비율</span>
+      <span style={{ fontSize: 11, color: C.gray }}>1 : 1 : 1 기준</span>
+      <span style={{ marginLeft: "auto" }}><Badge>참고용</Badge></span>
+    </div>
+    {/* 스택 바: 세그먼트 경계가 이상 분할선(33·67%)에서 벗어난 정도가 곧 불균형 */}
+    <div style={{ position: "relative", display: "flex", width: "100%", height: 22, borderRadius: 6, overflow: "hidden" }}>
+      {segs.map((s) => (
+        <div key={s.key} style={{ width: `${s.v * 100}%`, background: s.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: C.white, whiteSpace: "nowrap" }}>{s.key} {Math.round(s.v * 100)}%</span>
+        </div>
+      ))}
+      {[1 / 3, 2 / 3].map((t, i) => (
+        <div key={i} style={{ position: "absolute", top: -2, bottom: -2, left: `${t * 100}%`, width: 0, borderLeft: `1.5px dashed ${C.white}`, opacity: 0.9 }} />
+      ))}
+    </div>
+    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 9, flexWrap: "wrap" }}>
+      <span style={{ fontSize: 12, color: C.black, fontWeight: 600 }}>{p.ratioStr}</span>
+      <span style={{ fontSize: 11, color: C.gray }}>· 균형 {balancePct}%</span>
+      <span style={{ fontSize: 11, color: C.ash }}>· {dominantText}</span>
+    </div>
+    <p style={{ margin: "8px 0 0", fontSize: 11, color: C.gray, lineHeight: 1.5 }}>
+      점선이 1:1:1 이상 분할선이에요. 상안(헤어라인)은 각도·앞머리에 따라 오차가 있어 참고용입니다.
+    </p>
+  </div>);
+}
+
 function SymmetryDiag({ items }: { items: DiagItem[] }) {
   return (<div style={{ border: `0.5px solid ${C.line05}`, borderRadius: 8, padding: 12 }}>
     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
@@ -124,6 +178,19 @@ function groupFaceChips(chips: StyleChip[]): { group: string; label: string; chi
   return order.map((g) => ({ group: g, label: FACE_GROUP_LABEL[g] ?? g, chips: map.get(g)! }));
 }
 
+// 개인화 근거(왜) — reason 있는 칩만 노출. 메이크업 그룹에서 주로 보임.
+function Reasons({ chips }: { chips: StyleChip[] }) {
+  const withReason = chips.filter((c) => c.reason);
+  if (withReason.length === 0) return null;
+  return (<ul style={{ margin: "6px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 3 }}>
+    {withReason.map((c) => (
+      <li key={c.label} style={{ fontSize: 10.5, lineHeight: 1.45, color: C.ash }}>
+        <b style={{ fontWeight: 600 }}>{c.label}</b> — {c.reason}
+      </li>
+    ))}
+  </ul>);
+}
+
 function StylingChips({ rec, avoid, selected, onChange }: {
   rec: StyleChip[]; avoid: StyleChip[];
   selected: string[]; onChange: (labels: string[]) => void;
@@ -153,8 +220,9 @@ function StylingChips({ rec, avoid, selected, onChange }: {
   const Chip = ({ c, kind }: { c: StyleChip; kind: "rec" | "avoid" }) => {
     const on = selected.includes(c.label);
     const ink = kind === "rec" ? C.recInk : C.avoidInk;
-    return (<button onClick={() => click(c)} style={{ padding: "5px 10px", borderRadius: 999, border: on ? `1.5px solid ${ink}` : `0.5px solid ${C.line05}`, background: C.white, color: ink, fontSize: 12, fontWeight: on ? 600 : 400, cursor: "pointer" }}>{c.label}</button>);
+    return (<button onClick={() => click(c)} title={c.reason} style={{ padding: "5px 10px", borderRadius: 999, border: on ? `1.5px solid ${ink}` : `0.5px solid ${C.line05}`, background: C.white, color: ink, fontSize: 12, fontWeight: on ? 600 : 400, cursor: "pointer" }}>{c.label}</button>);
   };
+
 
   return (<div>
     <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
@@ -168,6 +236,7 @@ function StylingChips({ rec, avoid, selected, onChange }: {
           <div key={group} style={{ marginTop: i === 0 ? 0 : 10 }}>
             <div style={{ fontSize: 10, fontWeight: 600, color: C.ash, marginBottom: 5, letterSpacing: "0.02em" }}>{label}</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{chips.map((c) => <Chip key={c.label} c={c} kind="rec" />)}</div>
+            <Reasons chips={chips} />
           </div>
         ))}
       </div>
@@ -178,6 +247,7 @@ function StylingChips({ rec, avoid, selected, onChange }: {
               <div key={group} style={{ marginTop: i === 0 ? 0 : 10 }}>
                 <div style={{ fontSize: 10, fontWeight: 600, color: C.ash, marginBottom: 5, letterSpacing: "0.02em" }}>{label}</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{chips.map((c) => <Chip key={c.label} c={c} kind="avoid" />)}</div>
+                <Reasons chips={chips} />
               </div>
             ))
           : <span style={{ fontSize: 12, color: C.gray }}>특별히 회피할 항목이 없습니다</span>}
@@ -251,6 +321,8 @@ export function FaceShapeTab({
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>
         <SoftBars soft={data.soft} />
         <ImpressionAxis value={data.impression} />
+        {data.cuteMature !== undefined && <CuteMatureAxis value={data.cuteMature} />}
+        {data.proportion && <ThirdsPanel p={data.proportion} />}
         <SymmetryDiag items={data.diagnosis} />
         <StylingChips rec={data.styling.recommend} avoid={data.styling.avoid} selected={selected} onChange={onSelectChange} />
         <VFControl {...vf} />
