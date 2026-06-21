@@ -9,6 +9,7 @@ import { classifySilhouette, silhouetteInsight } from "@/lib/silhouette";
 import { getMakeupGuide, trustToImpression } from "@/lib/makeup";
 import { getTrendRecommendations } from "@/lib/trend";
 import { PERSONAL_COLORS } from "@/lib/personalColor";
+import { saveCurrentPageAsHtml } from "@/lib/saveAsHtml";
 import { extractBodyMeasurements } from "@/lib/mediapipe/bodyExtract";
 import { FACE_IDX, FACE_IDX_EXTRA, mapToFaceProportionPoints } from "@/lib/mediapipe/faceMap";
 import { computeFaceProportion } from "@/lib/faceProportion";
@@ -527,6 +528,21 @@ export default function ResultPage() {
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <button onClick={() => window.print()} style={{ color: C.black, fontSize: 13, background: C.white, border: `1px solid ${C.ash}`, borderRadius: 6, padding: "5px 10px", cursor: "pointer" }}>
               PDF 저장
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  await saveCurrentPageAsHtml({
+                    filename: `go-see-fit-결과-${new Date().toISOString().slice(0, 10)}.html`,
+                  });
+                } catch (e) {
+                  console.error("HTML 저장 실패:", e);
+                  alert("HTML 저장에 실패했습니다. 다시 시도해주세요.");
+                }
+              }}
+              style={{ color: C.black, fontSize: 13, background: C.white, border: `1px solid ${C.ash}`, borderRadius: 6, padding: "5px 10px", cursor: "pointer" }}
+            >
+              HTML 저장
             </button>
             <button onClick={() => router.push("/")} style={{ color: C.ash, fontSize: 13, background: "none", border: "none", cursor: "pointer" }}>
               처음부터
