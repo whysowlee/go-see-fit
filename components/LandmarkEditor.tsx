@@ -350,25 +350,29 @@ export const FACE_GROUPS: GroupScheme[] = [
   { n: 9, label: "코 끝", ids: ["noseTip"] },
 ];
 
+// 골격(점 좌표) vs 실루엣(마스크 외곽) 직교 설계 (2026-06-21)
+// - 골격 점 (3, 4, 8, 9, 10) = 뼈 위치. acromion/쇄골/대전자/관절 — 옷·살 무시
+// - 살 외곽 점 (6, 7, 11) = bust/waist/hip 둘레 측정 (살로 둘러싸여 골격 측정 불가)
+// - 키 점 (1, 2) = 두개골/종골 (맨발 + 머리카락 누름 권장)
 export const BODY_FRONT_GROUPS: GroupScheme[] = [
-  { n: 1, label: "정수리 — 머리(머리카락 포함) 가장 높은 점", ids: ["crown"] },
-  { n: 2, label: "양쪽 발뒤꿈치 — 바닥에 닿는 뒤꿈치 끝", ids: ["heelL", "heelR"], connect: true, autoLR: true },
-  { n: 3, label: "양쪽 어깨 끝 — 팔이 시작되는 어깨 맨 바깥", ids: ["acromionL", "acromionR"], connect: true, autoLR: true },
-  { n: 4, label: "양쪽 목 아래 — 목이 끝나고 어깨가 시작되는 곳", ids: ["neckBaseL", "neckBaseR"], connect: true, autoLR: true },
-  { n: 5, label: "양쪽 목 옆선 — 목에서 가장 굵은 부분", ids: ["neckL", "neckR"], connect: true, autoLR: true },
-  { n: 6, label: "양쪽 가슴 옆 — 겨드랑이 아래 가장 넓은 곳", ids: ["chestL", "chestR"], connect: true, autoLR: true },
-  { n: 7, label: "양쪽 허리 — 몸통에서 가장 잘록한 곳", ids: ["waistL", "waistR"], connect: true, autoLR: true },
-  { n: 8, label: "양쪽 골반 — 엉덩이에서 옆으로 가장 튀어나온 곳", ids: ["hipL", "hipR"], connect: true, autoLR: true },
-  { n: 9, label: "양쪽 팔꿈치 — 가장 도드라진 뼈", ids: ["elbowL", "elbowR"], connect: true, autoLR: true },
-  { n: 10, label: "양쪽 무릎 — 무릎 옆 튀어나온 곳", ids: ["kneeL", "kneeR"], connect: true, autoLR: true },
-  { n: 11, label: "사타구니 — 두 다리가 갈라지는 곳", ids: ["crotch"] },
+  { n: 1, label: "정수리 — 두개골 최상점 (머리카락 살짝 누른 위치)", ids: ["crown"] },
+  { n: 2, label: "양쪽 발뒤꿈치 — 바닥에 닿는 뒤꿈치 (맨발 권장)", ids: ["heelL", "heelR"], connect: true, autoLR: true },
+  { n: 3, label: "양쪽 어깨 봉우리 — 어깨뼈가 옆으로 가장 튀어나온 지점 (옷·근육 무시하고 안쪽 단단한 뼈)", ids: ["acromionL", "acromionR"], connect: true, autoLR: true },
+  { n: 4, label: "양쪽 쇄골 안쪽 끝 — 목 V자 패임 양옆 (목 베이스 안쪽 단단한 뼈)", ids: ["neckBaseL", "neckBaseR"], connect: true, autoLR: true },
+  { n: 5, label: "양쪽 목 옆선 — 목에서 가장 굵은 부분 (목 둘레 측정용, 살 외곽)", ids: ["neckL", "neckR"], connect: true, autoLR: true },
+  { n: 6, label: "양쪽 가슴 옆 — 겨드랑이 아래 가장 넓은 곳 (가슴 둘레 측정용, 살 외곽)", ids: ["chestL", "chestR"], connect: true, autoLR: true },
+  { n: 7, label: "양쪽 허리 — 몸통 옆에서 가장 잘록한 곳 (허리 둘레 측정용, 살 외곽)", ids: ["waistL", "waistR"], connect: true, autoLR: true },
+  { n: 8, label: "양쪽 대전자 — 허벅지 옆 가장 튀어나온 뼈 (엉덩이 살 안쪽, 만지면 단단함)", ids: ["hipL", "hipR"], connect: true, autoLR: true },
+  { n: 9, label: "양쪽 팔꿈치 — 옆에서 가장 도드라진 뼈", ids: ["elbowL", "elbowR"], connect: true, autoLR: true },
+  { n: 10, label: "양쪽 무릎 — 옆으로 튀어나온 뼈", ids: ["kneeL", "kneeR"], connect: true, autoLR: true },
+  { n: 11, label: "사타구니 — 두 다리가 V자로 만나는 점 (엉덩이 너비 측정용)", ids: ["crotch"] },
 ];
 
 export const BODY_SIDE_GROUPS: GroupScheme[] = [
-  { n: 12, label: "정수리 — 옆에서 본 머리(머리카락 포함) 가장 높은 점", ids: ["crownSide"] },
-  { n: 13, label: "발뒤꿈치 — 옆에서 본 뒤꿈치가 바닥에 닿는 점", ids: ["heelSide"] },
-  { n: 14, label: "가슴에서 가장 앞으로 나온 곳", ids: ["chestFront"] },
-  { n: 15, label: "등에서 가장 뒤로 나온 곳", ids: ["chestBack"] },
-  { n: 16, label: "옆에서 본 허리 — 배 쪽(앞)이 가장 들어간 곳", ids: ["waistLowSide"] },
-  { n: 17, label: "엉덩이에서 가장 뒤로 나온 곳", ids: ["hipBack"] },
+  { n: 12, label: "정수리 — 옆에서 본 두개골 최상점 (머리카락 누름)", ids: ["crownSide"] },
+  { n: 13, label: "발뒤꿈치 — 옆에서 본 뒤꿈치 바닥 (맨발)", ids: ["heelSide"] },
+  { n: 14, label: "가슴 앞 — 옆에서 가슴이 가장 앞으로 나온 점 (흉곽 두께 측정용)", ids: ["chestFront"] },
+  { n: 15, label: "등 뒤 — 옆에서 등이 가장 뒤로 나온 점 (흉곽 두께 측정용)", ids: ["chestBack"] },
+  { n: 16, label: "옆 허리 — 옆에서 배 쪽 외곽선이 가장 안쪽으로 들어간 점 (허리 둘레 측면 깊이)", ids: ["waistLowSide"] },
+  { n: 17, label: "엉덩이 뒤 — 옆에서 엉덩이가 가장 뒤로 나온 점 (엉덩이 둘레 측면 깊이)", ids: ["hipBack"] },
 ];

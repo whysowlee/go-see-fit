@@ -52,11 +52,13 @@ function frontPoseToCoords(pose: LandmarkPoint[]): Record<string, { x: number; y
   const hipW = Math.abs(hipL_mp.x - hipR_mp.x);
   const torsoH = hipMid.y - shMid.y;
 
-  // 3 어깨끝: MediaPipe 어깨를 살짝 바깥으로 (삼각근 두께)
-  const acromionL = { x: shL.x - shW * 0.05, y: shL.y };
-  const acromionR = { x: shR.x + shW * 0.05, y: shR.y };
+  // 3 어깨 봉우리 (acromion): MediaPipe pose 어깨 좌표 그대로 (이미 acromion 근방).
+  //   골격 측정용 — 옷 두께 제외. (이전 ×0.05 외곽 보정 제거)
+  const acromionL = { x: shL.x, y: shL.y };
+  const acromionR = { x: shR.x, y: shR.y };
 
-  // 4 목아래: 어깨선 위 ~25%, 어깨에서 목 중심 쪽 50%
+  // 4 쇄골 안쪽 끝 (sternoclavicular): 어깨선 위 ~8%, 어깨-목중앙 50% 안쪽.
+  //   골격 측정용 — V자 패임 양옆 단단한 뼈.
   const neckBaseL = {
     x: shL.x + (shMid.x - shL.x) * 0.5,
     y: shMid.y - torsoH * 0.08,
@@ -66,7 +68,7 @@ function frontPoseToCoords(pose: LandmarkPoint[]): Record<string, { x: number; y
     y: shMid.y - torsoH * 0.08,
   };
 
-  // 5 목옆: 귀(7,8)를 안쪽 25%로, y는 귀와 어깨 중간
+  // 5 목 옆선 (살 외곽 — 목 둘레 측정용, 실루엣 모듈): 귀(7,8)를 안쪽 25%로, y는 귀와 어깨 중간
   const neckL = {
     x: pose[7].x + (shMid.x - pose[7].x) * 0.25,
     y: (pose[7].y + shMid.y) / 2,
