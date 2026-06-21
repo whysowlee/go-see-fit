@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useApp, type CropRect } from "@/lib/store";
+import { useApp, type CropRect, type PhotoSlot } from "@/lib/store";
 import { useState, useCallback, useRef, type DragEvent, type ChangeEvent } from "react";
 import ImageCropper, { cropImage, FACE_ASPECT, BODY_ASPECT } from "@/components/ImageCropper";
 
@@ -28,15 +28,20 @@ export default function UploadPage() {
   const router = useRouter();
   const { state, dispatch } = useApp();
 
-  const [photos, setPhotos] = useState<Record<SlotKey, RawPhoto>>({
-    face: { file: null, url: "", width: 0, height: 0 },
-    bodyFront: { file: null, url: "", width: 0, height: 0 },
-    bodySide: { file: null, url: "", width: 0, height: 0 },
+  // store 에 이미 사진이 있으면(예: 관리자 모드 자동 채우기, 또는 뒤로가기) 그 상태로 복원한다.
+  const [photos, setPhotos] = useState<Record<SlotKey, RawPhoto>>(() => {
+    const p = state.photos;
+    const mk = (s?: PhotoSlot): RawPhoto =>
+      s ? { file: s.file, url: s.url, width: s.width, height: s.height } : { file: null, url: "", width: 0, height: 0 };
+    return { face: mk(p?.face), bodyFront: mk(p?.bodyFront), bodySide: mk(p?.bodySide) };
   });
-  const [crops, setCrops] = useState<Record<SlotKey, CropState>>({
-    face: { rect: null, croppedUrl: "", croppedW: 0, croppedH: 0 },
-    bodyFront: { rect: null, croppedUrl: "", croppedW: 0, croppedH: 0 },
-    bodySide: { rect: null, croppedUrl: "", croppedW: 0, croppedH: 0 },
+  const [crops, setCrops] = useState<Record<SlotKey, CropState>>(() => {
+    const p = state.photos;
+    const mk = (s?: PhotoSlot): CropState =>
+      s?.croppedUrl
+        ? { rect: s.cropRect ?? null, croppedUrl: s.croppedUrl, croppedW: s.croppedWidth ?? 0, croppedH: s.croppedHeight ?? 0 }
+        : { rect: null, croppedUrl: "", croppedW: 0, croppedH: 0 };
+    return { face: mk(p?.face), bodyFront: mk(p?.bodyFront), bodySide: mk(p?.bodySide) };
   });
   const [activeSlot, setActiveSlot] = useState<SlotKey | null>(null);
 
