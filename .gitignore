@@ -39,6 +39,22 @@ yarn-error.log*
 # Claude Code IDE settings
 .claude/
 
+# Claude Code 세션 백업 (로컬 보존용)
+.claude-sessions/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 릴스 레퍼런스 데이터 (로컬 전용 — 대본/요약 표)
+/transcripts/
+
+# 참고 자료 (로컬 전용 — 리서치 문서·피드백·예시 이미지·다이어그램·로컬 스크립트)
+/research_reference/
+/scripts/
+/flowchart/
+/예시 이미지/
+*.pdf
+*.docx
+/0621 업데이트.md
+/1차 피드백.md
