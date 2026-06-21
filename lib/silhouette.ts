@@ -231,11 +231,11 @@ export function silhouetteInsight(silhouette: SilhouetteResult, skeleton: Skelet
     "내추럴:Hourglass": "굵은 골격인데 외곽선 곡선 — 운동 등으로 만든 곡선, 핏 강조도 가능.",
     "내추럴:Triangle": "굵은 골격 + 하체 발달 — 상체 균형 잡는 디자인.",
     "내추럴:InvertedTriangle": "굵은 골격 + 상체 발달 — 어깨 정리 라인.",
-    "보류:Rectangle": "골격 측정이 보류 상태입니다. 실루엣은 직사각형으로 분류됨.",
-    "보류:SoftHourglass": "골격 측정이 보류 상태입니다. 실루엣은 부드러운 모래시계형으로 분류됨.",
-    "보류:Hourglass": "골격 측정이 보류 상태입니다. 실루엣은 모래시계로 분류됨.",
-    "보류:Triangle": "골격 측정이 보류 상태입니다. 실루엣은 삼각형으로 분류됨.",
-    "보류:InvertedTriangle": "골격 측정이 보류 상태입니다. 실루엣은 역삼각형으로 분류됨.",
+    "보류:Rectangle": "골격 측정이 보류 상태입니다. 외곽선은 직사각형으로 분류됨.",
+    "보류:SoftHourglass": "골격 측정이 보류 상태입니다. 외곽선은 부드러운 모래시계형으로 분류됨.",
+    "보류:Hourglass": "골격 측정이 보류 상태입니다. 외곽선은 모래시계로 분류됨.",
+    "보류:Triangle": "골격 측정이 보류 상태입니다. 외곽선은 삼각형으로 분류됨.",
+    "보류:InvertedTriangle": "골격 측정이 보류 상태입니다. 외곽선은 역삼각형으로 분류됨.",
   };
-  return matrix[`${k}:${s}`] ?? `${k} 골격 + ${SILHOUETTE_LABELS[s]} 실루엣`;
+  return matrix[`${k}:${s}`] ?? `${k} 골격 + ${SILHOUETTE_LABELS[s]} 외곽선`;
 }

@@ -567,6 +567,13 @@ export default function ResultPage() {
             {beautyCalc && <TrendCard beauty={beautyCalc} />}
           </div>
           <div className="print-page-break" style={{ display: tab === "body" ? "block" : "none" }}>
+            {/* 외곽선 비율(여성)은 세부 체형 분류 위에 노출 */}
+            {state.sex === "female" && bodyCalc?.silhouette && (
+              <SilhouetteCard
+                silhouette={bodyCalc.silhouette}
+                insight={bodyCalc.silhouetteInsightText}
+              />
+            )}
             {bodyData && (
               <BodyTypeTab
                 data={bodyData}
@@ -574,12 +581,6 @@ export default function ResultPage() {
                 selected={vf.body.selectedLabels}
                 onSelectChange={(labels) => handleSelectChange("body", labels)}
                 vf={buildVFControl("body")}
-              />
-            )}
-            {state.sex === "female" && bodyCalc?.silhouette && (
-              <SilhouetteCard
-                silhouette={bodyCalc.silhouette}
-                insight={bodyCalc.silhouetteInsightText}
               />
             )}
           </div>
@@ -621,7 +622,7 @@ function SilhouetteCard({
   const p = silhouette.percentiles;
   return (
     <div style={cardStyle}>
-      <h3 style={h3Style}>👗 정면 실루엣 (외곽선 비율)</h3>
+      <h3 style={h3Style}>👗 외곽선 비율 (앞에서 본 가슴·허리·엉덩이 비율)</h3>
       <div style={{ fontSize: 18, fontWeight: 700, color: "var(--black)" }}>
         {silhouette.labelKo} <span style={{ fontSize: 13, fontWeight: 400, color: "var(--gray)" }}>({silhouette.label})</span>
       </div>
