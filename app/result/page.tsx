@@ -560,7 +560,7 @@ export default function ResultPage() {
                 vf={buildVFControl("body")}
               />
             )}
-            {bodyCalc?.silhouette && (
+            {state.sex === "female" && bodyCalc?.silhouette && (
               <SilhouetteCard
                 silhouette={bodyCalc.silhouette}
                 insight={bodyCalc.silhouetteInsightText}
