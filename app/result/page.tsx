@@ -10,6 +10,14 @@ import { getMakeupGuide, trustToImpression } from "@/lib/makeup";
 import { getTrendRecommendations } from "@/lib/trend";
 import { PERSONAL_COLORS } from "@/lib/personalColor";
 import { saveCurrentPageAsHtml } from "@/lib/saveAsHtml";
+import {
+  getSkeletonInsight,
+  getFaceShapeInsight,
+  getRatioInsight,
+  getFrameInsight,
+  getImpressionInsight,
+} from "@/lib/insights";
+import { InsightPanel } from "@/components/InsightPanel";
 import { extractBodyMeasurements } from "@/lib/mediapipe/bodyExtract";
 import { FACE_IDX, FACE_IDX_EXTRA, mapToFaceProportionPoints } from "@/lib/mediapipe/faceMap";
 import { computeFaceProportion } from "@/lib/faceProportion";
@@ -173,7 +181,11 @@ export default function ResultPage() {
     const bottom = points.find((p) => p.id === "menton");
     const centerXDiff = top && bottom ? Math.abs(top.x - bottom.x) : 0;
 
-    return { faceResult, trust, points, soft, impression, proportion, brow, zygo, centerXDiff, top, bottom };
+    // 인사이트: 얼굴형 + 인상 (정의 + 근거 + 위치)
+    const faceShapeInsight = getFaceShapeInsight(faceResult.primary, faceResult.metrics);
+    const impressionInsight = getImpressionInsight(trust.label, faceResult.metrics);
+
+    return { faceResult, trust, points, soft, impression, proportion, brow, zygo, centerXDiff, top, bottom, faceShapeInsight, impressionInsight };
   }, [lm, photos]);
 
   // ── 메이크업 + 트렌드 추천 (얼굴형 + Todorov 인상 + 퍼스널컬러) ──
@@ -334,7 +346,13 @@ export default function ResultPage() {
     const sole = points.find((p) => p.id === "sole")!;
     const centerDrift = Math.abs(crown.x - sole.x);
 
-    return { extract, skel, axes, points, soft, detail, sh, hip, centerDrift, silhouette, silhouetteInsightText };
+    // 인사이트: 골격 + 비율 + 프레임 (정의 + 근거 + 위치)
+    const skelType = skel.type as "스트레이트" | "웨이브" | "내추럴" | "보류";
+    const skeletonInsight = getSkeletonInsight(skelType, extract.measurements, state.sex);
+    const ratioInsight = getRatioInsight(axes.ratio, extract.measurements, state.sex);
+    const frameInsight = getFrameInsight(axes.frame, extract.measurements, state.sex);
+
+    return { extract, skel, axes, points, soft, detail, sh, hip, centerDrift, silhouette, silhouetteInsightText, skeletonInsight, ratioInsight, frameInsight };
   }, [lm, photos, state.sex, bi]);
 
   // fetch body posing tip
@@ -563,6 +581,18 @@ export default function ResultPage() {
                 vf={buildVFControl("face")}
               />
             )}
+            {faceCalc && (
+              <InsightPanel
+                title={`🎭 얼굴형: ${faceCalc.faceResult.primary}`}
+                insight={faceCalc.faceShapeInsight}
+              />
+            )}
+            {faceCalc && (
+              <InsightPanel
+                title={`✨ 인상: ${faceCalc.trust.label}`}
+                insight={faceCalc.impressionInsight}
+              />
+            )}
             {beautyCalc && <MakeupCard beauty={beautyCalc} />}
             {beautyCalc && <TrendCard beauty={beautyCalc} />}
           </div>
@@ -581,6 +611,24 @@ export default function ResultPage() {
                 selected={vf.body.selectedLabels}
                 onSelectChange={(labels) => handleSelectChange("body", labels)}
                 vf={buildVFControl("body")}
+              />
+            )}
+            {bodyCalc && (
+              <InsightPanel
+                title={`🦴 골격: ${bodyCalc.skel.type}`}
+                insight={bodyCalc.skeletonInsight}
+              />
+            )}
+            {bodyCalc && (
+              <InsightPanel
+                title={`📏 비율: ${bodyCalc.axes.ratio}`}
+                insight={bodyCalc.ratioInsight}
+              />
+            )}
+            {bodyCalc && (
+              <InsightPanel
+                title={`🔲 프레임: ${bodyCalc.axes.frame}`}
+                insight={bodyCalc.frameInsight}
               />
             )}
           </div>
