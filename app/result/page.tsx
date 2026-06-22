@@ -20,6 +20,8 @@ import {
 import { InsightPanel } from "@/components/InsightPanel";
 import { scoreNecklines } from "@/lib/necklineScore";
 import { NecklineRankCard } from "@/components/NecklineRankCard";
+import { scoreStyleCategories } from "@/lib/styleScore";
+import { StyleRankCard } from "@/components/StyleRankCard";
 import { extractBodyMeasurements } from "@/lib/mediapipe/bodyExtract";
 import { FACE_IDX, FACE_IDX_EXTRA, mapToFaceProportionPoints } from "@/lib/mediapipe/faceMap";
 import { computeFaceProportion } from "@/lib/faceProportion";
@@ -364,6 +366,17 @@ export default function ResultPage() {
     return scoreNecklines(faceCalc.faceResult.primary, skel, state.personalColor);
   }, [faceCalc, bodyCalc, state.personalColor]);
 
+  // 옷 요소별 종합 추천 점수 (골격 + 외곽선 + 비율 다차원)
+  const styleCategories = useMemo(() => {
+    if (!bodyCalc) return null;
+    return scoreStyleCategories({
+      skeleton: bodyCalc.skel.type,
+      silhouette: bodyCalc.silhouette?.label ?? null,
+      ratio: bodyCalc.axes.ratio,
+      frame: bodyCalc.axes.frame,
+    });
+  }, [bodyCalc]);
+
   // fetch body posing tip
   const doFetchBodyTip = useCallback(() => {
     if (!bodyCalc || !state.sex) return;
@@ -641,6 +654,7 @@ export default function ResultPage() {
                 insight={bodyCalc.frameInsight}
               />
             )}
+            {styleCategories && styleCategories.length > 0 && <StyleRankCard categories={styleCategories} />}
           </div>
         </div>
       </div>
