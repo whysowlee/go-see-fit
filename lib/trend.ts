@@ -236,37 +236,65 @@ export const TRENDS: TrendLook[] = [
  * 추천 함수
  * ────────────────────────────────────────────────────────── */
 
-export interface TrendRecommendation {
-  recommended: TrendLook[];
-  caution: TrendLook[];
+/** 룩별 점수 + 등급 + 축별 사유 */
+export interface ScoredTrendLook {
+  look: TrendLook;
+  score: number; // good=+2, ok=0, caution=-2 합산
+  tier: "추천" | "무난" | "주의";
+  faceFit: "good" | "ok" | "caution" | "unknown";
+  pcFit: "good" | "ok" | "caution" | "unknown";
 }
 
+export interface TrendRecommendation {
+  /** 추천 (good 기여 있고 caution 없음) */
+  recommended: ScoredTrendLook[];
+  /** 무난 (중립 — 명시 정보 적음) */
+  neutral: ScoredTrendLook[];
+  /** 주의 (caution 기여 있음) */
+  caution: ScoredTrendLook[];
+}
+
+const FIT_SCORE = { good: 2, ok: 0, caution: -2, unknown: 0 } as const;
+
 /**
- * 얼굴형 + 퍼스널컬러 기반으로 트렌드 룩을 추천/비추천 분류.
- * - 얼굴형과 퍼스널컬러 모두 "good" → recommended
- * - 어느 한쪽이라도 "caution" → caution
- * - 그 외 → recommended (ok 포함)
+ * 얼굴형 + 퍼스널컬러 기반 트렌드 룩 3단계 정렬.
+ *
+ * 이전 버그: faceFit/pcFit 누락을 "ok"로 폴백 → caution만 거르고 나머지
+ *   전부 추천 → 11개 다 추천되는 문제. 특히 계란형(caution 0개) + 퍼컬
+ *   미입력 시 전부 추천.
+ *
+ * 수정: 점수 합산 (good +2 / ok 0 / caution -2)으로 3단계 분리.
+ *   - 주의: caution 기여가 하나라도 있으면 (faceFit 또는 pcFit)
+ *   - 추천: caution 없고 good 기여가 하나라도 있음 (score > 0)
+ *   - 무난: 그 외 (정의된 정보가 ok뿐이거나 미정의 — 중립)
+ *   각 그룹 내 점수순 정렬.
  */
 export function getTrendRecommendations(
   faceShape: FaceShape,
   personalColor: PersonalColor,
 ): TrendRecommendation {
-  const recommended: TrendLook[] = [];
-  const caution: TrendLook[] = [];
-
-  for (const look of TRENDS) {
-    const faceFit = look.faceShapeFit[faceShape] ?? look.faceShapeFit.all ?? "ok";
-    const pcFit =
+  const scored: ScoredTrendLook[] = TRENDS.map((look) => {
+    // 누락 시 unknown (ok와 구분 — 점수는 0이나 "추천 근거 없음"으로 취급)
+    const faceFitRaw = look.faceShapeFit[faceShape] ?? look.faceShapeFit.all;
+    const faceFit = faceFitRaw ?? "unknown";
+    const pcFitRaw =
       personalColor === "unknown"
-        ? "ok"
-        : look.personalColorFit[personalColor] ?? look.personalColorFit.all ?? "ok";
+        ? undefined
+        : look.personalColorFit[personalColor] ?? look.personalColorFit.all;
+    const pcFit = pcFitRaw ?? "unknown";
 
-    if (faceFit === "caution" || pcFit === "caution") {
-      caution.push(look);
-    } else {
-      recommended.push(look);
-    }
-  }
+    const score = FIT_SCORE[faceFit] + FIT_SCORE[pcFit];
+    const hasCaution = faceFit === "caution" || pcFit === "caution";
+    const hasGood = faceFit === "good" || pcFit === "good";
 
-  return { recommended, caution };
+    const tier: ScoredTrendLook["tier"] = hasCaution ? "주의" : hasGood ? "추천" : "무난";
+    return { look, score, tier, faceFit, pcFit };
+  });
+
+  const byScore = (a: ScoredTrendLook, b: ScoredTrendLook) => b.score - a.score;
+  return {
+    recommended: scored.filter((s) => s.tier === "추천").sort(byScore),
+    neutral: scored.filter((s) => s.tier === "무난").sort(byScore),
+    caution: scored.filter((s) => s.tier === "주의").sort(byScore),
+  };
 }

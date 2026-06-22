@@ -786,37 +786,63 @@ function TrendCard({
 }: {
   beauty: { pcMeta: { labelKo: string }; trends: ReturnType<typeof getTrendRecommendations> };
 }) {
-  const { recommended, caution } = beauty.trends;
+  const { recommended, neutral, caution } = beauty.trends;
+  // fit 사유 한 줄 (얼굴형/퍼컬 중 의미 있는 것)
+  const fitNote = (s: { faceFit: string; pcFit: string }): string => {
+    const parts: string[] = [];
+    if (s.faceFit === "good") parts.push("얼굴형 잘 맞음");
+    else if (s.faceFit === "caution") parts.push("얼굴형 주의");
+    if (s.pcFit === "good") parts.push("퍼스널컬러 잘 맞음");
+    else if (s.pcFit === "caution") parts.push("퍼스널컬러 주의");
+    return parts.join(" · ");
+  };
   return (
     <div style={cardStyle}>
       <h3 style={h3Style}>✨ 2025-26 메이크업 트렌드 룩</h3>
       <div style={{ fontSize: 12, color: "var(--gray)", marginBottom: 12 }}>
-        얼굴형 + 퍼스널컬러({beauty.pcMeta.labelKo}) 기반 추천
+        얼굴형 + 퍼스널컬러({beauty.pcMeta.labelKo}) 종합 — 총 {recommended.length + neutral.length + caution.length}개 룩 중
       </div>
 
-      <Section title={`✅ 추천 (${recommended.length})`}>
-        {recommended.map((look) => (
-          <div key={look.id} style={{ marginBottom: 8, paddingBottom: 8, borderBottom: "1px dashed #eee" }}>
-            <div style={{ fontWeight: 600 }}>{look.name} <span style={{ fontSize: 10, color: "var(--gray)", fontWeight: 400 }}>· {look.source}</span></div>
-            <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>{look.mood}</div>
-            <div style={{ fontSize: 11, color: "var(--indigo)", marginTop: 4 }}>💡 {look.tip}</div>
-          </div>
-        ))}
-      </Section>
+      {recommended.length > 0 && (
+        <Section title={`✅ 추천 (${recommended.length})`}>
+          {recommended.map(({ look, ...s }) => (
+            <div key={look.id} style={{ marginBottom: 8, paddingBottom: 8, borderBottom: "1px dashed #eee" }}>
+              <div style={{ fontWeight: 600 }}>{look.name} <span style={{ fontSize: 10, color: "var(--gray)", fontWeight: 400 }}>· {look.source}</span></div>
+              <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>{look.mood}</div>
+              {fitNote(s) && <div style={{ fontSize: 11, color: "#2d8a2d", marginTop: 2 }}>✔ {fitNote(s)}</div>}
+              <div style={{ fontSize: 11, color: "var(--indigo)", marginTop: 4 }}>💡 {look.tip}</div>
+            </div>
+          ))}
+        </Section>
+      )}
+
+      {neutral.length > 0 && (
+        <Section title={`◽ 무난 (${neutral.length}) — 톤만 맞추면 OK`}>
+          {neutral.map(({ look }) => (
+            <div key={look.id} style={{ marginBottom: 5, fontSize: 12 }}>
+              <span style={{ fontWeight: 600 }}>{look.name}</span>
+              <span style={{ fontSize: 11, color: "var(--gray)" }}> — {look.mood}</span>
+            </div>
+          ))}
+        </Section>
+      )}
 
       {caution.length > 0 && (
         <Section title={`⚠️ 주의 (${caution.length}) — 변형하면 가능`}>
-          {caution.map((look) => (
+          {caution.map(({ look, ...s }) => (
             <div key={look.id} style={{ marginBottom: 6 }}>
               <div style={{ fontWeight: 600 }}>{look.name}</div>
-              <div style={{ fontSize: 11, color: "var(--gray)", marginTop: 2 }}>{look.mood}</div>
+              <div style={{ fontSize: 11, color: "#c0392b", marginTop: 2 }}>⚠ {fitNote(s)}</div>
+              {look.faceShapeNotes && Object.values(look.faceShapeNotes)[0] && (
+                <div style={{ fontSize: 11, color: "var(--gray)", marginTop: 1 }}>{Object.values(look.faceShapeNotes)[0]}</div>
+              )}
             </div>
           ))}
         </Section>
       )}
 
       <p style={{ fontSize: 10, color: "var(--gray)", marginTop: 10 }}>
-        출처: trend_mapping.pdf · Elle/Bazaar/W Korea 2025-26
+        출처: trend_mapping.pdf · Elle/Bazaar/W Korea 2025-26 · 점수: 얼굴형/퍼컬 good +2 / caution -2
       </p>
     </div>
   );
