@@ -18,6 +18,8 @@ import {
   getImpressionInsight,
 } from "@/lib/insights";
 import { InsightPanel } from "@/components/InsightPanel";
+import { scoreNecklines } from "@/lib/necklineScore";
+import { NecklineRankCard } from "@/components/NecklineRankCard";
 import { extractBodyMeasurements } from "@/lib/mediapipe/bodyExtract";
 import { FACE_IDX, FACE_IDX_EXTRA, mapToFaceProportionPoints } from "@/lib/mediapipe/faceMap";
 import { computeFaceProportion } from "@/lib/faceProportion";
@@ -355,6 +357,13 @@ export default function ResultPage() {
     return { extract, skel, axes, points, soft, detail, sh, hip, centerDrift, silhouette, silhouetteInsightText, skeletonInsight, ratioInsight, frameInsight };
   }, [lm, photos, state.sex, bi]);
 
+  // 넥라인 종합 추천 점수 (얼굴형 + 골격 + 퍼스널컬러 다차원)
+  const necklineScores = useMemo(() => {
+    if (!faceCalc) return null;
+    const skel = bodyCalc?.skel.type ?? "보류";
+    return scoreNecklines(faceCalc.faceResult.primary, skel, state.personalColor);
+  }, [faceCalc, bodyCalc, state.personalColor]);
+
   // fetch body posing tip
   const doFetchBodyTip = useCallback(() => {
     if (!bodyCalc || !state.sex) return;
@@ -593,6 +602,7 @@ export default function ResultPage() {
                 insight={faceCalc.impressionInsight}
               />
             )}
+            {necklineScores && <NecklineRankCard scores={necklineScores} />}
             {beautyCalc && <MakeupCard beauty={beautyCalc} />}
             {beautyCalc && <TrendCard beauty={beautyCalc} />}
           </div>
