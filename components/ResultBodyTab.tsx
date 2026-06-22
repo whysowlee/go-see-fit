@@ -84,10 +84,12 @@ function SoftBars({ soft }: { soft: SoftScore[] }) {
 }
 
 function DetailCards({ d }: { d: BodyResultData["detail"] }) {
-  const cards = [["실루엣", d.silhouette], ["비율", d.proportion], ["프레임", d.frame]];
+  // 실루엣은 lib/silhouette.ts 의 SilhouetteCard 로 분리됨 — 빈 값은 자동 제외
+  const cards = [["실루엣", d.silhouette], ["비율", d.proportion], ["프레임", d.frame]].filter(([, v]) => v);
+  const cols = cards.length;
   return (<div>
     <div style={{ fontSize: 13, fontWeight: 700, color: C.indigo, marginBottom: 10 }}>세부 체형 분류</div>
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 10 }}>
       {cards.map(([label, val]) => (<div key={label} style={{ background: C.tint, borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, color: C.gray, marginBottom: 4 }}>{label}</div><div style={{ fontSize: 17, fontWeight: 500, color: C.indigo }}>{val}</div></div>))}
     </div>
   </div>);

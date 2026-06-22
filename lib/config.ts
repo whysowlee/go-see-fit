@@ -110,11 +110,13 @@ export const SWN = {
  *   ⚠️ 버전 간 불일치 존재(남 좌고비 ≤51 vs ≤52.0). 수정본 값 채택.
  * ────────────────────────────────────────────────────────── */
 export const AXES = {
-  // ① 실루엣(여: 어깨/골반) / V-Taper(남: 가슴둘레-허리둘레 드롭, cm)
-  // ⚠ 8차 "엉덩이너비"는 앉은 자세(앉은엉덩이너비)뿐, 우리 정면 측정과 정의 불일치 → 보정 보류
+  // ① 실루엣 — DEPRECATED (2026-06-21)
+  //   정면 외곽선 분류는 lib/silhouetteConfig.ts (K-means k=4, 외곽선 비율)로 이관됨.
+  //   bodyType.ts classifyAxes는 이 값을 더 이상 참조하지 않음 (빈 문자열 반환).
+  //   객체 자체는 외부 import 호환을 위해 유지 — 다음 정리 단계에서 완전 제거 예정.
   silhouette: {
-    female: { shoulderType: T(1.1, "PROVISIONAL", "어깨형>=1.10 (8차 hip 정의 불일치로 보류)"), curveType: T(1.0, "PROVISIONAL", "곡선형<1.00") },
-    male: { vType_cm: T(21, "PROVISIONAL", "V형>=21cm, KS K 0050:2024"), straight_cm: T(16, "PROVISIONAL", "직선형<16cm") },
+    female: { shoulderType: T(1.1, "PROVISIONAL", "DEPRECATED — lib/silhouette.ts 사용"), curveType: T(1.0, "PROVISIONAL", "DEPRECATED") },
+    male: { vType_cm: T(21, "PROVISIONAL", "DEPRECATED — 남성 외곽선은 외부 리서치 대기"), straight_cm: T(16, "PROVISIONAL", "DEPRECATED") },
   },
   // ② 비율: 좌고비 = 앉은키/신장×100 — SizeKorea 8차 20-39 P25/P75
   ratio: {

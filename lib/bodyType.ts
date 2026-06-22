@@ -93,21 +93,18 @@ function finalize(type: Skeleton, sw: number, nat: number, conf: number): Skelet
  * 2층: 모델 보정 3축
  * ────────────────────────────────────────────────────────── */
 export interface AxisResult {
-  silhouette: string; // ① (여)어깨형/밸런스/곡선형 · (남)V형/밸런스/직선형
+  /**
+   * @deprecated 2026-06-21 — 정면 외곽선 분류는 lib/silhouette.ts (K-means k=4)
+   * 로 이관됨. AXES.silhouette은 더 이상 산출하지 않음. 빈 문자열 반환.
+   * 호환 유지 목적으로 필드는 남김 (외부 참조 깨짐 방지).
+   */
+  silhouette: string;
   ratio: "롱레그" | "밸런스" | "롱토르소"; // ②
   frame: "슬림" | "미디엄" | "와이드"; // ③
 }
 
 export function classifyAxes(meas: BodyMeasurements, sex: Sex): AxisResult {
-  // ① 실루엣 / V-Taper
-  let silhouette: string;
-  if (sex === "female") {
-    const f = AXES.silhouette.female;
-    silhouette = meas.shoulderHipRatio >= f.shoulderType.value ? "어깨형" : meas.shoulderHipRatio < f.curveType.value ? "곡선형" : "밸런스";
-  } else {
-    const m = AXES.silhouette.male;
-    silhouette = meas.chestMinusWaist_cm >= m.vType_cm.value ? "V형" : meas.chestMinusWaist_cm < m.straight_cm.value ? "직선형" : "밸런스";
-  }
+  // ① 실루엣 — lib/silhouette.ts로 이관 (외곽선 비율). 빈 문자열 반환.
   // ② 비율 (좌고비)
   const r = AXES.ratio[sex];
   const ratio: AxisResult["ratio"] =
@@ -116,11 +113,12 @@ export function classifyAxes(meas: BodyMeasurements, sex: Sex): AxisResult {
   const fr = AXES.frame[sex];
   const frame: AxisResult["frame"] =
     meas.shoulderHeightRatio <= fr.slim.value ? "슬림" : meas.shoulderHeightRatio >= fr.wide.value ? "와이드" : "미디엄";
-  return { silhouette, ratio, frame };
+  return { silhouette: "", ratio, frame };
 }
 
 /** 자연어 한 줄 조합 (문서 §7 '읽는 법') */
 export function describe(skel: SkeletonResult, axes: AxisResult): string {
   if (skel.type === "보류") return "측면 사진이 없어 골격 타입은 보류입니다.";
-  return `${skel.type} · ${axes.silhouette} · ${axes.ratio} · ${axes.frame}`;
+  // silhouette 항목 제거 — 정면 외곽선은 lib/silhouette.ts 결과 카드로 분리됨
+  return `${skel.type} · ${axes.ratio} · ${axes.frame}`;
 }
