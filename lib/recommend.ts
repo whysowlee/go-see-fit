@@ -30,74 +30,74 @@ export interface FaceStyleRec { recommend: StyleChip[]; avoid: StyleChip[] }
 const FACE_REC: Record<FaceShape, FaceStyleRec> = {
   "둥근형": {
     recommend: [
-      { label: "V넥", group: "neckline" },
-      { label: "스윗하트넥", group: "neckline" },
-      { label: "직선 텍스처 단발", group: "hair", category: "hair", prompt: "직선적인 텍스처의 턱선 단발 헤어스타일" },
-      { label: "비대칭 가르마", group: "hair", category: "hair", prompt: "비대칭으로 탄 가르마" },
-      { label: "이마·턱끝 세로 하이라이트", group: "makeup", category: "makeup", prompt: "이마 중앙과 턱끝에 세로로 하이라이터를 넣은 메이크업" },
+      { label: "V넥", group: "neckline", reason: "세로로 길게 파여 둥근 얼굴을 길어 보이게 해요" },
+      { label: "스윗하트넥", group: "neckline", reason: "곡선이 턱선과 어울리면서 세로 시선을 만들어요" },
+      { label: "직선 텍스처 단발", group: "hair", category: "hair", prompt: "직선적인 텍스처의 턱선 단발 헤어스타일", reason: "직선 라인이 둥근 윤곽을 또렷하게 정돈해요" },
+      { label: "비대칭 가르마", group: "hair", category: "hair", prompt: "비대칭으로 탄 가르마", reason: "비대칭이 얼굴 좌우 대칭을 깨 길이감을 더해요" },
+      { label: "이마·턱끝 세로 하이라이트", group: "makeup", category: "makeup", prompt: "이마 중앙과 턱끝에 세로로 하이라이터를 넣은 메이크업", reason: "세로 하이라이트로 길이를 강조해요" },
     ],
     avoid: [
-      { label: "라운드넥", group: "neckline" },
-      { label: "하이넥", group: "neckline" },
-      { label: "풀뱅 앞머리", group: "hair", category: "hair", prompt: "이마를 가리는 풀뱅 앞머리" },
+      { label: "라운드넥", group: "neckline", reason: "둥근 네크라인이 둥근 얼굴을 반복해 더 둥글어 보여요" },
+      { label: "하이넥", group: "neckline", reason: "목·얼굴이 짧아 보여 둥근 인상이 강해져요" },
+      { label: "풀뱅 앞머리", group: "hair", category: "hair", prompt: "이마를 가리는 풀뱅 앞머리", reason: "가로 라인이 얼굴을 더 짧고 둥글어 보이게 해요" },
     ],
   },
   "사각형": {
     recommend: [
-      { label: "U넥", group: "neckline" },
-      { label: "라운드넥", group: "neckline" },
-      { label: "보브 단발", group: "hair", category: "hair", prompt: "턱선까지 오는 부드러운 보브 단발" },
-      { label: "아치 앞머리", group: "hair", category: "hair", prompt: "이마 위 아치 모양으로 자연스럽게 흘러내리는 앞머리" },
+      { label: "U넥", group: "neckline", reason: "부드러운 곡선이 각진 턱선을 완화해요" },
+      { label: "라운드넥", group: "neckline", reason: "둥근 라인이 각진 윤곽을 부드럽게 보완해요" },
+      { label: "보브 단발", group: "hair", category: "hair", prompt: "턱선까지 오는 부드러운 보브 단발", reason: "부드러운 곡선이 각진 턱을 감싸 완화해요" },
+      { label: "아치 앞머리", group: "hair", category: "hair", prompt: "이마 위 아치 모양으로 자연스럽게 흘러내리는 앞머리", reason: "곡선 아치가 직선적인 이마를 부드럽게 해요" },
     ],
     avoid: [
-      { label: "스퀘어넥", group: "neckline" },
-      { label: "일자 단발", group: "hair", category: "hair", prompt: "수평으로 잘린 일자 단발" },
+      { label: "스퀘어넥", group: "neckline", reason: "각진 네크라인이 각진 턱을 반복해 강조해요" },
+      { label: "일자 단발", group: "hair", category: "hair", prompt: "수평으로 잘린 일자 단발", reason: "수평 직선이 각진 윤곽을 더 도드라지게 해요" },
     ],
   },
   "역삼각형": {
     recommend: [
-      { label: "보트넥", group: "neckline" },
-      { label: "넓은 라운드넥", group: "neckline" },
-      { label: "턱선 볼륨 단발", group: "hair", category: "hair", prompt: "턱선 부근에 볼륨을 넣은 단발 헤어" },
+      { label: "보트넥", group: "neckline", reason: "어깨 쪽으로 넓게 퍼져 좁은 턱과 균형을 맞춰요" },
+      { label: "넓은 라운드넥", group: "neckline", reason: "하관에 너비를 더해 위아래 균형을 잡아요" },
+      { label: "턱선 볼륨 단발", group: "hair", category: "hair", prompt: "턱선 부근에 볼륨을 넣은 단발 헤어", reason: "좁은 하관에 볼륨을 더해 역삼각 균형을 맞춰요" },
     ],
     avoid: [
-      { label: "깊은 V넥", group: "neckline" },
-      { label: "픽시컷", group: "hair", category: "hair", prompt: "이마와 귀가 다 드러나는 짧은 픽시컷" },
+      { label: "깊은 V넥", group: "neckline", reason: "좁은 턱을 더 뾰족하게 강조해요" },
+      { label: "픽시컷", group: "hair", category: "hair", prompt: "이마와 귀가 다 드러나는 짧은 픽시컷", reason: "넓은 이마가 그대로 드러나 상부가 더 넓어 보여요" },
     ],
   },
   "장방형": {
     recommend: [
-      { label: "하이넥", group: "neckline" },
-      { label: "스탠드칼라", group: "neckline" },
-      { label: "풍성한 웨이브", group: "hair", category: "hair", prompt: "옆으로 풍성하게 떨어지는 웨이브 헤어" },
-      { label: "풀뱅 앞머리", group: "hair", category: "hair", prompt: "이마 전체를 일자로 덮는 풀뱅 앞머리" },
+      { label: "하이넥", group: "neckline", reason: "목 길이를 줄여 긴 얼굴을 짧아 보이게 해요" },
+      { label: "스탠드칼라", group: "neckline", reason: "가로 라인이 세로 길이를 끊어줘요" },
+      { label: "풍성한 웨이브", group: "hair", category: "hair", prompt: "옆으로 풍성하게 떨어지는 웨이브 헤어", reason: "옆 볼륨이 너비를 더해 긴 얼굴을 보완해요" },
+      { label: "풀뱅 앞머리", group: "hair", category: "hair", prompt: "이마 전체를 일자로 덮는 풀뱅 앞머리", reason: "이마를 가려 세로 길이를 단축해요" },
     ],
     avoid: [
-      { label: "깊은 V넥", group: "neckline" },
-      { label: "긴 스트레이트 헤어", group: "hair", category: "hair", prompt: "어깨 아래로 길게 떨어지는 스트레이트 헤어" },
+      { label: "깊은 V넥", group: "neckline", reason: "세로 라인이 긴 얼굴을 더 길어 보이게 해요" },
+      { label: "긴 스트레이트 헤어", group: "hair", category: "hair", prompt: "어깨 아래로 길게 떨어지는 스트레이트 헤어", reason: "세로 직선이 얼굴 길이를 강조해요" },
     ],
   },
   "계란형": {
     recommend: [
-      { label: "스퀘어넥", group: "neckline" },
-      { label: "오프숄더", group: "neckline" },
-      { label: "대부분 헤어 수용", group: "hair", category: "hair", prompt: "현재 자연스러운 헤어 그대로 유지" },
-      { label: "깔끔한 메이크업 라인", group: "makeup", category: "makeup", prompt: "잡티 없이 깔끔하고 정돈된 메이크업" },
+      { label: "스퀘어넥", group: "neckline", reason: "균형 잡힌 얼굴이라 또렷한 라인을 잘 소화해요" },
+      { label: "오프숄더", group: "neckline", reason: "어깨 라인을 살려 균형미를 강조해요" },
+      { label: "대부분 헤어 수용", group: "hair", category: "hair", prompt: "현재 자연스러운 헤어 그대로 유지", reason: "이상적 비율이라 대부분 스타일을 소화해요" },
+      { label: "깔끔한 메이크업 라인", group: "makeup", category: "makeup", prompt: "잡티 없이 깔끔하고 정돈된 메이크업", reason: "균형을 해치지 않게 절제된 포인트가 좋아요" },
     ],
     avoid: [],
   },
   "마름모형": {
     recommend: [
-      { label: "V넥", group: "neckline" },
-      { label: "스윗하트넥", group: "neckline" },
-      { label: "옆머리 레이어드", group: "hair", category: "hair", prompt: "옆머리에 레이어드 컷을 넣어 광대를 가린 헤어" },
-      { label: "광대 밖 옅은 블러셔", group: "makeup", category: "makeup", prompt: "광대 바깥쪽에 옅게 펴 바른 블러셔 메이크업" },
+      { label: "V넥", group: "neckline", reason: "세로 라인이 넓은 광대에서 시선을 분산해요" },
+      { label: "스윗하트넥", group: "neckline", reason: "곡선이 광대 너비를 부드럽게 완화해요" },
+      { label: "옆머리 레이어드", group: "hair", category: "hair", prompt: "옆머리에 레이어드 컷을 넣어 광대를 가린 헤어", reason: "옆머리가 도드라진 광대를 자연스럽게 가려요" },
+      { label: "광대 밖 옅은 블러셔", group: "makeup", category: "makeup", prompt: "광대 바깥쪽에 옅게 펴 바른 블러셔 메이크업", reason: "광대 바깥에 옅게 발라 돌출을 완화해요" },
     ],
     avoid: [
-      { label: "보트넥", group: "neckline" },
-      { label: "오프숄더", group: "neckline" },
-      { label: "광대 라인 단발", group: "hair", category: "hair", prompt: "광대 부근에서 끝나는 단발" },
-      { label: "광대 위 진한 블러셔", group: "makeup", category: "makeup", prompt: "광대 위에 진하게 올린 블러셔" },
+      { label: "보트넥", group: "neckline", reason: "가로 너비를 더해 넓은 광대를 강조해요" },
+      { label: "오프숄더", group: "neckline", reason: "어깨·광대 너비가 같이 강조돼요" },
+      { label: "광대 라인 단발", group: "hair", category: "hair", prompt: "광대 부근에서 끝나는 단발", reason: "단발 끝이 광대에 닿아 너비를 부각해요" },
+      { label: "광대 위 진한 블러셔", group: "makeup", category: "makeup", prompt: "광대 위에 진하게 올린 블러셔", reason: "광대 정점을 강조해 돌출이 도드라져요" },
     ],
   },
 };
@@ -226,26 +226,26 @@ function pickTopN(items: ScoredItem[], n: number, direction: "rec" | "avoid", gr
 
 // 1층 골격 → 상의 소재 (basis §1-4)
 const TOP_MATERIAL_REC: Record<Skeleton, StyleChip> = {
-  "스트레이트": { label: "구조적 셰이프드 핏", group: "material-top", category: "garment", prompt: "구조감 있는 셰이프드 핏 상의" },
-  "웨이브":    { label: "부드러운 슬림~세미핏", group: "material-top", category: "garment", prompt: "부드럽게 떨어지는 슬림~세미핏 상의" },
-  "내추럴":    { label: "릴랙스드·자연 낙하", group: "material-top", category: "garment", prompt: "릴랙스드한 자연 낙하감의 상의" },
+  "스트레이트": { label: "구조적 셰이프드 핏", group: "material-top", category: "garment", prompt: "구조감 있는 셰이프드 핏 상의", reason: "두꺼운 흉곽엔 몸을 잡아주는 구조적 핏이 깔끔해요" },
+  "웨이브":    { label: "부드러운 슬림~세미핏", group: "material-top", category: "garment", prompt: "부드럽게 떨어지는 슬림~세미핏 상의", reason: "얇은 상체엔 부드러운 핏이 곡선을 살려요" },
+  "내추럴":    { label: "릴랙스드·자연 낙하", group: "material-top", category: "garment", prompt: "릴랙스드한 자연 낙하감의 상의", reason: "큰 골격엔 여유로운 낙하감이 자연스럽게 어울려요" },
 };
 const TOP_MATERIAL_AVOID: Record<Skeleton, StyleChip> = {
-  "스트레이트": { label: "흐물거리는 드레이프", group: "material-top" },
-  "웨이브":    { label: "딱딱한 구조·과한 볼륨", group: "material-top" },
-  "내추럴":    { label: "타이트 셋인·빡빡한 핏", group: "material-top" },
+  "스트레이트": { label: "흐물거리는 드레이프", group: "material-top", reason: "힘 없는 소재는 단단한 상체를 부해 보이게 해요" },
+  "웨이브":    { label: "딱딱한 구조·과한 볼륨", group: "material-top", reason: "빳빳한 소재는 얇은 상체를 비어 보이게 해요" },
+  "내추럴":    { label: "타이트 셋인·빡빡한 핏", group: "material-top", reason: "꽉 끼는 핏은 큰 골격을 답답하게 드러내요" },
 };
 
 // 1층 골격 → 하의 소재 (basis §2-4)
 const BOTTOM_MATERIAL_REC: Record<Skeleton, StyleChip> = {
-  "스트레이트": { label: "구조적 직물", group: "material-bottom", category: "garment", prompt: "구조적 직물 소재의 하의" },
-  "웨이브":    { label: "부드러운 드레이프", group: "material-bottom", category: "garment", prompt: "부드러운 드레이프성 소재의 하의" },
-  "내추럴":    { label: "워싱 데님·자연소재", group: "material-bottom", category: "garment", prompt: "워싱 데님 또는 자연소재의 하의" },
+  "스트레이트": { label: "구조적 직물", group: "material-bottom", category: "garment", prompt: "구조적 직물 소재의 하의", reason: "탄탄한 소재가 직선적인 하체 라인을 정돈해요" },
+  "웨이브":    { label: "부드러운 드레이프", group: "material-bottom", category: "garment", prompt: "부드러운 드레이프성 소재의 하의", reason: "찰랑이는 소재가 곡선적인 하체에 흐름을 더해요" },
+  "내추럴":    { label: "워싱 데님·자연소재", group: "material-bottom", category: "garment", prompt: "워싱 데님 또는 자연소재의 하의", reason: "자연스러운 질감이 큰 골격과 조화로워요" },
 };
 const BOTTOM_MATERIAL_AVOID: Record<Skeleton, StyleChip> = {
-  "스트레이트": { label: "머메이드·흐물 드레이프", group: "material-bottom" },
-  "웨이브":    { label: "빳빳한 와이드", group: "material-bottom" },
-  "내추럴":    { label: "광택 새틴", group: "material-bottom" },
+  "스트레이트": { label: "머메이드·흐물 드레이프", group: "material-bottom", reason: "흐물거리는 소재는 하체 라인을 무너뜨려요" },
+  "웨이브":    { label: "빳빳한 와이드", group: "material-bottom", reason: "뻣뻣한 와이드는 곡선적 하체를 덮어버려요" },
+  "내추럴":    { label: "광택 새틴", group: "material-bottom", reason: "광택 소재는 큰 골격을 과하게 드러내요" },
 };
 
 // 남성 V형/직선형 → 매트릭스(여성 기준) 매핑
